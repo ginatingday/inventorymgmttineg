@@ -61,7 +61,10 @@
       <!-- Controls -->
       <div class="flex justify-between items-center mb-6">
         <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search description, prop #..." class="bg-[#111827] border border-slate-800 px-4 py-2 rounded-lg text-sm w-72 focus:outline-none focus:border-emerald-500">
-        <button onclick="fetchAssetData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-sm px-4 py-2 rounded-lg font-medium">🔄 Refresh Data</button>
+        <div class="flex gap-3">
+          <button onclick="fetchAssetData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-sm px-4 py-2 rounded-lg font-medium">🔄 Refresh Data</button>
+          <button onclick="openAddModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-4 py-2 rounded-lg font-medium">+ Add Capital Asset</button>
+        </div>
       </div>
 
       <!-- Dynamic Data Table -->
@@ -86,6 +89,50 @@
         </table>
       </div>
     </main>
+  </div>
+
+  <!-- ADD ASSET MODAL (Saves to Google Sheets) -->
+  <div id="addModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-xl w-full max-w-lg p-6">
+      <h3 class="text-emerald-400 font-bold text-base mb-4">➕ ADD NEW CAPITAL ASSET</h3>
+      <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="text-slate-400">PROPERTY NO.</label>
+          <input type="text" id="add-prop" required placeholder="e.g. I-001-2026" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-amber-400 font-bold focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="text-slate-400">ACQUISITION DATE</label>
+          <input type="date" id="add-date" required class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="text-slate-400">ASSET DESCRIPTION</label>
+          <input type="text" id="add-desc" required placeholder="e.g. 1 UNIT SPEAKER" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="text-slate-400">ACCOUNTABLE PERSON</label>
+          <input type="text" id="add-accountable" required placeholder="e.g. SETH JOSHUA DANNANG" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-slate-400">COST (₱)</label>
+            <input type="number" step="0.01" id="add-cost" required placeholder="19500.00" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="text-slate-400">BOOK VALUE (₱)</label>
+            <input type="number" step="0.01" id="add-book" required placeholder="19500.00" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+        <div>
+          <label class="text-slate-400">SERIAL NO.</label>
+          <input type="text" id="add-serial" placeholder="e.g. 13250513129" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+        
+        <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeAddModal()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded text-xs">Cancel</button>
+          <button type="submit" id="submitBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded text-xs">💾 Save to Sheet</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- PROPERTY INVENTORY STICKER MODAL -->
@@ -121,7 +168,7 @@
           </div>
         </div>
         <div class="mt-6 flex justify-between">
-          <button onclick="closeModal()" class="bg-slate-800 px-4 py-2 rounded text-xs text-slate-300">Close</button>
+          <button onclick="closeStickerModal()" class="bg-slate-800 px-4 py-2 rounded text-xs text-slate-300">Close</button>
           <button onclick="window.print()" class="bg-emerald-500 text-slate-950 font-bold px-4 py-2 rounded text-xs">🖨️ Print Sticker</button>
         </div>
       </div>
@@ -158,10 +205,11 @@
 
   <!-- JavaScript Integration -->
   <script>
-    // Your Deployed Apps Script URL
-    const API_URL = "https://script.google.com/macros/s/AKfycbyFFEvtJYWXd45j7BPnijeh8p94gA6Or6D7481BfhKmNQ6duW7Kr6-brJJZ9I_NxRMbwA/exec";
+    // Updated Web App URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
     let rawAssetData = [];
 
+    // GET Request: Fetch Data from Google Sheets
     async function fetchAssetData() {
       const tbody = document.getElementById('asset-table-body');
       tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Fetching live data from Google Sheets...</td></tr>`;
@@ -174,7 +222,47 @@
         calculateMetrics(rawAssetData);
       } catch (error) {
         console.error("Error fetching data:", error);
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-400">Failed to load data. Please ensure Web App permissions are set to 'Anyone'.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-400">Failed to load data. Ensure your Web App permissions are set to 'Anyone'.</td></tr>`;
+      }
+    }
+
+    // POST Request: Submit New Asset to Google Sheets
+    async function submitNewAsset(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.innerText = "Saving...";
+      submitBtn.disabled = true;
+
+      const payload = {
+        propertyNo: document.getElementById('add-prop').value,
+        acquisitionDate: document.getElementById('add-date').value,
+        assetDescription: document.getElementById('add-desc').value,
+        accountable: document.getElementById('add-accountable').value,
+        cost: document.getElementById('add-cost').value,
+        bookValue: document.getElementById('add-book').value,
+        serialNo: document.getElementById('add-serial').value || 'N/A'
+      };
+
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        alert("New asset submitted to Google Sheet!");
+        document.getElementById('addAssetForm').reset();
+        closeAddModal();
+        
+        // Wait 1.5 seconds for Apps Script to write row before refreshing
+        setTimeout(fetchAssetData, 1500);
+      } catch (err) {
+        console.error("Error adding asset:", err);
+        alert("Failed to submit asset.");
+      } finally {
+        submitBtn.innerText = "💾 Save to Sheet";
+        submitBtn.disabled = false;
       }
     }
 
@@ -183,7 +271,7 @@
       tbody.innerHTML = '';
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">No records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">No records found inside Google Sheet.</td></tr>`;
         return;
       }
 
@@ -222,6 +310,18 @@
       document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     }
 
+    function openAddModal() {
+      const modal = document.getElementById('addModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAddModal() {
+      const modal = document.getElementById('addModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
     function openStickerModal(index) {
       const item = rawAssetData[index];
       
@@ -247,9 +347,10 @@
       document.getElementById('pv-st-officer').innerText = document.getElementById('st-officer').value;
     }
 
-    function closeModal() {
-      document.getElementById('stickerModal').classList.add('hidden');
-      document.getElementById('stickerModal').classList.remove('flex');
+    function closeStickerModal() {
+      const modal = document.getElementById('stickerModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     }
 
     function filterTable() {
