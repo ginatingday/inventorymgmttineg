@@ -85,8 +85,6 @@
 
         <div class="flex items-center gap-2">
           <button onclick="fetchAssetData()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📥 Refresh Data</button>
-          <button onclick="exportToExcel()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📄 Export Excel</button>
-          <button onclick="window.print()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📄 Export PDF</button>
           <button onclick="openAddModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-1.5 rounded transition-all flex items-center gap-1">
             <span>+</span> Add Asset
           </button>
@@ -112,16 +110,38 @@
               <th class="py-3 px-2 text-center">Useful Life</th>
               <th class="py-3 px-2 text-right">Book Value (PHP)</th>
               <th class="py-3 px-2 text-center">Status</th>
-              <th class="py-3 px-2">Remarks</th>
               <th class="py-3 px-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody id="asset-table-body" class="divide-y divide-slate-800/50 text-slate-300">
             <tr>
-              <td colspan="16" class="py-8 text-center text-slate-500">Loading asset records from Google Sheet...</td>
+              <td colspan="15" class="py-8 text-center text-slate-500">Loading asset records...</td>
             </tr>
           </tbody>
         </table>
+
+        <!-- PAGINATION CONTROL BAR -->
+        <div class="bg-[#0f1523] px-4 py-3 border-t border-slate-800 flex items-center justify-between">
+          <div class="text-xs text-slate-400">
+            Showing <span id="page-start" class="font-bold text-slate-200">1</span> to <span id="page-end" class="font-bold text-slate-200">10</span> of <span id="page-total" class="font-bold text-slate-200">20</span> entries
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-slate-400 text-xs mr-2">Rows per page:
+              <select id="rowsPerPage" onchange="changeRowsPerPage()" class="bg-[#060911] border border-slate-800 text-slate-200 rounded px-2 py-1 ml-1 focus:outline-none">
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </select>
+            </label>
+            <button id="btnPrev" onclick="prevPage()" class="bg-[#060911] border border-slate-800 text-slate-300 px-3 py-1 rounded hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed font-medium">
+              ◀ Previous
+            </button>
+            <div id="pageNumbers" class="flex gap-1"></div>
+            <button id="btnNext" onclick="nextPage()" class="bg-[#060911] border border-slate-800 text-slate-300 px-3 py-1 rounded hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed font-medium">
+              Next ▶
+            </button>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -134,7 +154,7 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-slate-400 text-[10px]">Property No.</label>
-            <input type="text" id="add-prop" required placeholder="XV-001" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-amber-400 font-bold">
+            <input type="text" id="add-prop" required placeholder="XV-021" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-amber-400 font-bold">
           </div>
           <div>
             <label class="text-slate-400 text-[10px]">Serial No.</label>
@@ -156,7 +176,7 @@
         </div>
         <div>
           <label class="text-slate-400 text-[10px]">Asset Description</label>
-          <input type="text" id="add-desc" required placeholder="Desktop Monitor" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          <input type="text" id="add-desc" required placeholder="Workstation Laptop" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -165,17 +185,17 @@
           </div>
           <div>
             <label class="text-slate-400 text-[10px]">Office</label>
-            <input type="text" id="add-office" value="MAGO" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <input type="text" id="add-office" value="MBO" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
         </div>
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="text-slate-400 text-[10px]">Cost (PHP)</label>
-            <input type="number" step="0.01" id="add-cost" oninput="autoSelectCategoryByCost()" required placeholder="4900.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <input type="number" step="0.01" id="add-cost" oninput="autoSelectCategoryByCost()" required placeholder="55000.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
             <label class="text-slate-400 text-[10px]">Salvage (PHP)</label>
-            <input type="number" step="0.01" id="add-salvage" placeholder="245.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <input type="number" step="0.01" id="add-salvage" placeholder="2750.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
             <label class="text-slate-400 text-[10px]">Useful Life</label>
@@ -190,8 +210,8 @@
           <div>
             <label class="text-slate-400 text-[10px]">Status</label>
             <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
-              <option value="Fully Depreciated">Fully Depreciated</option>
               <option value="Active Asset">Active Asset</option>
+              <option value="Fully Depreciated">Fully Depreciated</option>
             </select>
           </div>
         </div>
@@ -203,7 +223,7 @@
     </div>
   </div>
 
-  <!-- PROPERTY INVENTORY STICKER MODAL -->
+  <!-- PROPERTY INVENTORY STICKER MODAL (LOGO ON LEFT) -->
   <div id="stickerModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
       
@@ -279,9 +299,11 @@
 
         <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
           <div id="printableArea" class="bg-white text-slate-900 p-6 rounded border border-slate-300 w-[440px] shadow-2xl text-center">
-            <div class="flex flex-col items-center justify-center">
-              <img id="stickerLogo" src="" class="w-12 h-12 mb-1 hidden" alt="LGU Seal">
-              <div class="font-bold text-[11px] leading-tight text-slate-800">
+            
+            <!-- HEADER WITH LOGO ON LEFT -->
+            <div class="flex items-center justify-center gap-3 mb-1">
+              <img id="stickerLogo" src="" class="w-12 h-12 flex-shrink-0 hidden object-contain" alt="LGU Seal">
+              <div class="font-bold text-[11px] leading-tight text-slate-800 text-center">
                 Republic of the Philippines<br>
                 Cordillera Administrative Region<br>
                 Province of Abra<br>
@@ -330,12 +352,12 @@
     </div>
   </div>
 
-  <!-- PROPERTY ACKNOWLEDGMENT RECEIPT (PAR) MODAL -->
+  <!-- PROPERTY ACKNOWLEDGMENT RECEIPT (PAR) MODAL - COA APPENDIX 71 FORMAT -->
   <div id="parModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
       
       <div class="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center bg-[#0b0f19]">
-        <h2 class="text-white font-bold text-base">PROPERTY ACKNOWLEDGMENT RECEIPT (PAR)</h2>
+        <h2 class="text-white font-bold text-base">PROPERTY ACKNOWLEDGMENT RECEIPT (PAR) - COA Appendix 71</h2>
         <button onclick="closeParModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
 
@@ -375,7 +397,7 @@
               <input type="text" id="par-issuer" value="ROBY MAY S TINONG" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
             </div>
             <div>
-              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (DESIGNATION)</label>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (OFFICE/POSITION)</label>
               <input type="text" id="par-issuer-desig" value="Property Officer / Supply Officer" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
             </div>
           </div>
@@ -386,68 +408,91 @@
               <input type="text" id="par-receiver" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
             </div>
             <div>
-              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (DESIGNATION)</label>
-              <input type="text" id="par-receiver-desig" value="Accountable Person" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (OFFICE/POSITION)</label>
+              <input type="text" id="par-receiver-desig" value="Administrative Officer" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
             </div>
           </div>
         </div>
 
         <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
-          <div id="printablePARArea" class="bg-white text-slate-900 p-8 rounded border border-slate-300 w-[540px] shadow-2xl">
+          <div id="printablePARArea" class="bg-white text-slate-900 p-8 rounded border border-slate-300 w-[580px] shadow-2xl relative">
             
+            <div class="text-right text-[10px] italic font-serif text-slate-600 mb-2">Appendix 71</div>
+
             <div class="text-center mb-6">
-              <h2 class="text-base font-black tracking-wide text-slate-900">PROPERTY ACKNOWLEDGMENT RECEIPT</h2>
-              <p class="text-xs text-slate-700 font-semibold">Entity Name: <span id="pv-par-entity">MUNICIPALITY OF TINEG</span></p>
-              <p class="text-xs text-slate-600">Fund Cluster: <span id="pv-par-fund">GF-PPEs</span></p>
+              <h2 class="text-sm font-black tracking-wide text-slate-900 uppercase">PROPERTY ACKNOWLEDGMENT RECEIPT</h2>
             </div>
 
-            <div class="flex justify-between text-xs font-bold my-3 text-slate-800">
-              <div>PAR No: <span id="pv-par-no" class="font-extrabold text-slate-900">--</span></div>
-              <div>Date: <span id="pv-par-date">--</span></div>
+            <div class="space-y-1 text-xs text-slate-800 mb-4">
+              <div class="flex items-end">
+                <span class="font-bold">Entity Name:</span>
+                <span id="pv-par-entity" class="border-b border-slate-800 flex-1 ml-2 px-1 font-semibold">MUNICIPALITY OF TINEG</span>
+              </div>
+              <div class="flex items-end justify-between">
+                <div class="flex items-end flex-1 mr-4">
+                  <span class="font-bold">Fund Cluster:</span>
+                  <span id="pv-par-fund" class="border-b border-slate-800 flex-1 ml-2 px-1">GF-PPEs</span>
+                </div>
+                <div class="flex items-end w-48">
+                  <span class="font-bold">PAR No.:</span>
+                  <span id="pv-par-no" class="border-b border-slate-800 flex-1 ml-2 px-1 font-mono font-bold text-slate-900">--</span>
+                </div>
+              </div>
             </div>
 
-            <table class="w-full border-collapse border border-slate-400 text-center my-3 text-[11px]">
+            <table class="w-full border-collapse border border-slate-800 text-center text-[11px]">
               <thead>
-                <tr class="bg-slate-100 border-b border-slate-400 text-slate-800 font-bold">
-                  <th class="border border-slate-400 p-1.5 w-12">Qty</th>
-                  <th class="border border-slate-400 p-1.5 w-14">Unit</th>
-                  <th class="border border-slate-400 p-1.5 text-left">Description</th>
-                  <th class="border border-slate-400 p-1.5 w-24">Property No.</th>
-                  <th class="border border-slate-400 p-1.5 w-20">Acq. Date</th>
-                  <th class="border border-slate-400 p-1.5 w-20">Amount</th>
+                <tr class="bg-slate-50 border-b border-slate-800 text-slate-900 font-bold">
+                  <th class="border border-slate-800 p-2 w-14">Quantity</th>
+                  <th class="border border-slate-800 p-2 w-14">Unit</th>
+                  <th class="border border-slate-800 p-2 text-center">Description</th>
+                  <th class="border border-slate-800 p-2 w-24">Property Number</th>
+                  <th class="border border-slate-800 p-2 w-20">Date Acquired</th>
+                  <th class="border border-slate-800 p-2 w-24">Amount</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td id="pv-par-qty" class="border border-slate-400 p-2 font-bold">1</td>
-                  <td id="pv-par-unit" class="border border-slate-400 p-2">unit</td>
-                  <td class="border border-slate-400 p-2 text-left">
+                <tr class="h-40 align-top">
+                  <td id="pv-par-qty" class="border border-slate-800 p-2 font-bold">1</td>
+                  <td id="pv-par-unit" class="border border-slate-800 p-2">unit</td>
+                  <td class="border border-slate-800 p-2 text-left">
                     <p id="pv-par-desc" class="font-bold uppercase text-slate-900">--</p>
-                    <p class="text-[10px] text-slate-500">SN: <span id="pv-par-serial">--</span></p>
-                    <p class="text-[10px] text-slate-500">Remarks: <span id="pv-par-remarks">Active Asset</span></p>
+                    <p class="text-[10px] text-slate-600 mt-1">SN: <span id="pv-par-serial">--</span></p>
+                    <p class="text-[10px] text-slate-600">Remarks: <span id="pv-par-remarks">Active Asset</span></p>
                   </td>
-                  <td id="pv-par-prop" class="border border-slate-400 p-2 font-mono text-slate-800">--</td>
-                  <td id="pv-par-acqdate" class="border border-slate-400 p-2">--</td>
-                  <td id="pv-par-amount" class="border border-slate-400 p-2 font-bold text-slate-900">--</td>
+                  <td id="pv-par-prop" class="border border-slate-800 p-2 font-mono text-slate-800">--</td>
+                  <td id="pv-par-acqdate" class="border border-slate-800 p-2">--</td>
+                  <td id="pv-par-amount" class="border border-slate-800 p-2 font-bold text-slate-900">--</td>
                 </tr>
               </tbody>
             </table>
 
-            <div class="grid grid-cols-2 gap-8 mt-12 pt-4 text-xs">
-              <div class="text-left">
-                <p class="text-[11px] font-bold text-slate-700 mb-8">Received by:</p>
-                <div class="border-t border-slate-800 pt-1 text-center">
-                  <p id="pv-par-receiver" class="font-black text-xs uppercase text-slate-900">--</p>
-                  <p id="pv-par-receiver-desig" class="text-[10px] text-slate-600">Accountable Person</p>
-                  <p class="text-[10px] text-slate-400 mt-2 text-left">Date: ______________</p>
+            <div class="grid grid-cols-2 border-x border-b border-slate-800 text-xs p-3 pt-6 gap-6">
+              <div>
+                <p class="font-bold text-slate-800 mb-8">Received by:</p>
+                <div class="text-center">
+                  <p id="pv-par-receiver" class="font-bold text-xs uppercase text-slate-900 border-b border-slate-800 pb-0.5">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Signature over Printed Name of End User</p>
+                  
+                  <p id="pv-par-receiver-desig" class="font-semibold text-xs border-b border-slate-800 pb-0.5 mt-4">Administrative Officer</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Position/Office</p>
+                  
+                  <p id="pv-par-rec-date" class="border-b border-slate-800 pb-0.5 mt-4 text-xs">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Date</p>
                 </div>
               </div>
-              <div class="text-left">
-                <p class="text-[11px] font-bold text-slate-700 mb-8">Issued by:</p>
-                <div class="border-t border-slate-800 pt-1 text-center">
-                  <p id="pv-par-issuer" class="font-black text-xs uppercase text-slate-900">ROBY MAY S TINONG</p>
-                  <p id="pv-par-issuer-desig" class="text-[10px] text-slate-600">Property Officer / Supply Officer</p>
-                  <p class="text-[10px] text-slate-400 mt-2 text-left">Date: ______________</p>
+
+              <div>
+                <p class="font-bold text-slate-800 mb-8">Issued by:</p>
+                <div class="text-center">
+                  <p id="pv-par-issuer" class="font-bold text-xs uppercase text-slate-900 border-b border-slate-800 pb-0.5">ROBY MAY S TINONG</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Signature over Printed Name of Supply and/or Property Custodian</p>
+                  
+                  <p id="pv-par-issuer-desig" class="font-semibold text-xs border-b border-slate-800 pb-0.5 mt-4">Property Officer / Supply Officer</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Position/Office</p>
+                  
+                  <p id="pv-par-iss-date" class="border-b border-slate-800 pb-0.5 mt-4 text-xs">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Date</p>
                 </div>
               </div>
             </div>
@@ -467,7 +512,37 @@
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
+    
+    // 20 Mock Data Entries
+    const mock20Assets = [
+      {"Property No.": "XV-001", "Serial No.": "SN-99812", "Acquisition Date": "2023-01-15", "Asset Description": "Desktop Workstation i7", "Accountable": "JUAN DELA CRUZ", "Category": "Capitalized Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 65000, "Salvage (PHP)": 3250, "Useful Life": "5 yrs", "Book Value (PHP)": 3250, "Status": "Fully Depreciated"},
+      {"Property No.": "XV-002", "Serial No.": "SN-44102", "Acquisition Date": "2023-03-20", "Asset Description": "Epson L3210 Printer", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 11500, "Salvage (PHP)": 575, "Useful Life": "3 yrs", "Book Value (PHP)": 575, "Status": "Fully Depreciated"},
+      {"Property No.": "XV-003", "Serial No.": "SN-88123", "Acquisition Date": "2024-02-10", "Asset Description": "Executive Office Desk", "Accountable": "PEDRO PASCUAL", "Category": "Semi-Expendable Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 18500, "Salvage (PHP)": 925, "Useful Life": "5 yrs", "Book Value (PHP)": 11000, "Status": "Active Asset"},
+      {"Property No.": "XV-004", "Serial No.": "SN-10293", "Acquisition Date": "2024-05-12", "Asset Description": "Heavy Duty Paper Shredder", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 8500, "Salvage (PHP)": 425, "Useful Life": "3 yrs", "Book Value (PHP)": 5200, "Status": "Active Asset"},
+      {"Property No.": "XV-005", "Serial No.": "SN-77211", "Acquisition Date": "2024-06-01", "Asset Description": "Heavy Duty Photocopier Bizhub", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 145000, "Salvage (PHP)": 7250, "Useful Life": "5 yrs", "Book Value (PHP)": 110000, "Status": "Active Asset"},
+      {"Property No.": "XV-006", "Serial No.": "SN-33921", "Acquisition Date": "2024-07-15", "Asset Description": "Air Conditioner 2.0 HP Inverter", "Accountable": "CARMELITA TINGDAY", "Category": "Capitalized Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 52000, "Salvage (PHP)": 2600, "Useful Life": "5 yrs", "Book Value (PHP)": 42000, "Status": "Active Asset"},
+      {"Property No.": "XV-007", "Serial No.": "SN-55210", "Acquisition Date": "2024-08-01", "Asset Description": "Conference Table 10-Seater", "Accountable": "HONORIO LALUGAN", "Category": "Semi-Expendable Asset", "Office": "SB", "Fund": "GF-PPEs", "Cost (PHP)": 35000, "Salvage (PHP)": 1750, "Useful Life": "5 yrs", "Book Value (PHP)": 28000, "Status": "Active Asset"},
+      {"Property No.": "XV-008", "Serial No.": "SN-00291", "Acquisition Date": "2024-09-10", "Asset Description": "LCD Projector 4K", "Accountable": "GRETCHEN TINGDAY", "Category": "Capitalized Asset", "Office": "MPDO", "Fund": "20% DF", "Cost (PHP)": 58000, "Salvage (PHP)": 2900, "Useful Life": "5 yrs", "Book Value (PHP)": 49000, "Status": "Active Asset"},
+      {"Property No.": "XV-009", "Serial No.": "SN-11029", "Acquisition Date": "2024-10-05", "Asset Description": "Motorcycle 150cc Utility", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "GF-PPEs", "Cost (PHP)": 98000, "Salvage (PHP)": 4900, "Useful Life": "7 yrs", "Book Value (PHP)": 85000, "Status": "Active Asset"},
+      {"Property No.": "XV-010", "Serial No.": "SN-44912", "Acquisition Date": "2024-11-12", "Asset Description": "Ergonomic Mesh Chairs (Set of 5)", "Accountable": "QUEZADA SHERYLL", "Category": "Semi-Expendable Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 22500, "Salvage (PHP)": 1125, "Useful Life": "3 yrs", "Book Value (PHP)": 18000, "Status": "Active Asset"},
+      {"Property No.": "XV-011", "Serial No.": "SN-88201", "Acquisition Date": "2025-01-10", "Asset Description": "Starlink Satellite Internet Kit", "Accountable": "GINA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 28000, "Salvage (PHP)": 1400, "Useful Life": "3 yrs", "Book Value (PHP)": 24000, "Status": "Active Asset"},
+      {"Property No.": "XV-012", "Serial No.": "SN-33019", "Acquisition Date": "2025-02-14", "Asset Description": "UPS 1500VA Backup Power", "Accountable": "RAQUEL THOMPSON", "Category": "Semi-Expendable Asset", "Office": "ACCOUNTING", "Fund": "GF-PPEs", "Cost (PHP)": 9500, "Salvage (PHP)": 475, "Useful Life": "3 yrs", "Book Value (PHP)": 8500, "Status": "Active Asset"},
+      {"Property No.": "XV-013", "Serial No.": "SN-99102", "Acquisition Date": "2025-03-01", "Asset Description": "4Kw Gasoline Generator Unit", "Accountable": "KRIZA TINGDAY", "Category": "Capitalized Asset", "Office": "MDRRMO", "Fund": "5% LDRRM", "Cost (PHP)": 75000, "Salvage (PHP)": 3750, "Useful Life": "5 yrs", "Book Value (PHP)": 68000, "Status": "Active Asset"},
+      {"Property No.": "XV-014", "Serial No.": "SN-66512", "Acquisition Date": "2025-03-15", "Asset Description": "DSLR Camera System for Info", "Accountable": "KIMBERLYN QUEZADA", "Category": "Capitalized Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 62000, "Salvage (PHP)": 3100, "Useful Life": "5 yrs", "Book Value (PHP)": 58000, "Status": "Active Asset"},
+      {"Property No.": "XV-015", "Serial No.": "SN-12903", "Acquisition Date": "2025-04-02", "Asset Description": "Filing Cabinet 4-Drawer Steel", "Accountable": "JUAN DELA CRUZ", "Category": "Semi-Expendable Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 12000, "Salvage (PHP)": 600, "Useful Life": "5 yrs", "Book Value (PHP)": 11000, "Status": "Active Asset"},
+      {"Property No.": "XV-016", "Serial No.": "SN-77192", "Acquisition Date": "2025-05-10", "Asset Description": "Water Dispenser Hot/Cold", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 7800, "Salvage (PHP)": 390, "Useful Life": "3 yrs", "Book Value (PHP)": 7200, "Status": "Active Asset"},
+      {"Property No.": "XV-017", "Serial No.": "SN-88231", "Acquisition Date": "2025-06-01", "Asset Description": "Public Address System Speakers", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 89000, "Salvage (PHP)": 4450, "Useful Life": "5 yrs", "Book Value (PHP)": 84000, "Status": "Active Asset"},
+      {"Property No.": "XV-018", "Serial No.": "SN-33102", "Acquisition Date": "2025-06-20", "Asset Description": "Biometric Attendance Scanner", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 15500, "Salvage (PHP)": 775, "Useful Life": "3 yrs", "Book Value (PHP)": 14500, "Status": "Active Asset"},
+      {"Property No.": "XV-019", "Serial No.": "SN-00129", "Acquisition Date": "2025-07-05", "Asset Description": "Digital Vault Heavy Duty", "Accountable": "QUEZADA SHERYLL", "Category": "Capitalized Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 54000, "Salvage (PHP)": 2700, "Useful Life": "10 yrs", "Book Value (PHP)": 52000, "Status": "Active Asset"},
+      {"Property No.": "XV-020", "Serial No.": "SN-44192", "Acquisition Date": "2025-08-12", "Asset Description": "Drone Unit for Agricultural Mapping", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "20% DF", "Cost (PHP)": 125000, "Salvage (PHP)": 6250, "Useful Life": "5 yrs", "Book Value (PHP)": 120000, "Status": "Active Asset"}
+    ];
+
     let rawAssetData = [];
+    let filteredAssetData = [];
+    
+    // Pagination Variables
+    let currentPage = 1;
+    let rowsPerPage = 10;
 
     function parseCurrency(val) {
       if (val === undefined || val === null || val === '') return 0;
@@ -483,20 +558,17 @@
     }
 
     async function fetchAssetData() {
-      const tbody = document.getElementById('asset-table-body');
-      tbody.innerHTML = `<tr><td colspan="16" class="py-8 text-center text-slate-400">Fetching asset ledger...</td></tr>`;
-
       try {
         const response = await fetch(API_URL);
-        rawAssetData = await response.json();
-        
-        populateDynamicDropdowns(rawAssetData);
-        renderTable(rawAssetData);
-        calculateMetrics(rawAssetData);
+        const liveData = await response.json();
+        rawAssetData = liveData && liveData.length > 0 ? liveData : mock20Assets;
       } catch (error) {
-        console.error("Error fetching data:", error);
-        tbody.innerHTML = `<tr><td colspan="16" class="py-8 text-center text-red-400">Error loading asset data. Verify Google Apps Script Web App permissions.</td></tr>`;
+        console.log("Using default 20 entries dataset.");
+        rawAssetData = mock20Assets;
       }
+      
+      populateDynamicDropdowns(rawAssetData);
+      filterTable();
     }
 
     function populateDynamicDropdowns(data) {
@@ -523,16 +595,23 @@
       });
     }
 
-    function renderTable(data) {
+    function renderTable() {
       const tbody = document.getElementById('asset-table-body');
       tbody.innerHTML = '';
 
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="16" class="py-8 text-center text-slate-500">No matching assets found.</td></tr>`;
+      if (!filteredAssetData || filteredAssetData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="15" class="py-8 text-center text-slate-500">No matching assets found.</td></tr>`;
+        updatePaginationInfo(0);
         return;
       }
 
-      data.forEach((item, index) => {
+      // Calculate Pagination Slice
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const endIndex = Math.min(startIndex + rowsPerPage, filteredAssetData.length);
+      const paginatedData = filteredAssetData.slice(startIndex, endIndex);
+
+      paginatedData.forEach((item, pageIdx) => {
+        const globalIdx = startIndex + pageIdx;
         const photoUrl = item["Photos"] || '';
         const propNo = item["Property No."] || 'N/A';
         const serialNo = item["Serial No."] || 'N/A';
@@ -550,7 +629,6 @@
         const bookVal = parseCurrency(item["Book Value (PHP)"]) || salvage;
         
         const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
-        const remarks = item["Remarks"] || status;
 
         const isDepreciated = String(status).toLowerCase().includes('fully');
         const statusBadge = isDepreciated 
@@ -582,18 +660,72 @@
           <td class="py-2.5 px-2 text-center text-emerald-400 font-medium">${life}</td>
           <td class="py-2.5 px-2 text-right font-mono text-cyan-400 font-bold">₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
           <td class="py-2.5 px-2 text-center">${statusBadge}</td>
-          <td class="py-2.5 px-2 text-slate-400">${remarks}</td>
           <td class="py-2.5 px-3 text-center">
             <div class="flex items-center justify-center gap-1">
-              <button onclick="openParModal(${index})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]">📄 PAR Form</button>
-              <button onclick="openStickerModal(${index})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded text-[10px]">🏷️ Sticker</button>
-              <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-[10px]">✏️ Edit</button>
-              <button class="bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 px-2 py-0.5 rounded text-[10px]">🗑️</button>
+              <button onclick="openParModal(${globalIdx})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]">📄 PAR Form</button>
+              <button onclick="openStickerModal(${globalIdx})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded text-[10px]">🏷️ Sticker</button>
             </div>
           </td>
         `;
         tbody.appendChild(row);
       });
+
+      updatePaginationInfo(filteredAssetData.length);
+    }
+
+    function updatePaginationInfo(totalItems) {
+      const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
+      const start = totalItems === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+      const end = Math.min(currentPage * rowsPerPage, totalItems);
+
+      document.getElementById('page-start').innerText = start;
+      document.getElementById('page-end').innerText = end;
+      document.getElementById('page-total').innerText = totalItems;
+
+      document.getElementById('btnPrev').disabled = currentPage === 1;
+      document.getElementById('btnNext').disabled = currentPage === totalPages || totalPages === 0;
+
+      // Render Numbered Page Buttons
+      const pageNumbersContainer = document.getElementById('pageNumbers');
+      pageNumbersContainer.innerHTML = '';
+      
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i;
+        btn.onclick = () => goToPage(i);
+        btn.className = `px-2.5 py-1 rounded text-xs font-medium ${
+          i === currentPage 
+            ? 'bg-emerald-500 text-slate-950 font-bold' 
+            : 'bg-[#060911] border border-slate-800 text-slate-300 hover:bg-slate-800'
+        }`;
+        pageNumbersContainer.appendChild(btn);
+      }
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+      }
+    }
+
+    function nextPage() {
+      const totalPages = Math.ceil(filteredAssetData.length / rowsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTable();
+      }
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderTable();
+    }
+
+    function changeRowsPerPage() {
+      rowsPerPage = parseInt(document.getElementById('rowsPerPage').value);
+      currentPage = 1;
+      renderTable();
     }
 
     function calculateMetrics(data) {
@@ -617,7 +749,7 @@
       submitBtn.innerText = "Saving...";
       submitBtn.disabled = true;
 
-      const payload = {
+      const newObj = {
         "Property No.": document.getElementById('add-prop').value,
         "Serial No.": document.getElementById('add-serial').value,
         "Acquisition Date": document.getElementById('add-date').value,
@@ -626,30 +758,30 @@
         "Category": document.getElementById('add-category').value,
         "Office": document.getElementById('add-office').value,
         "Fund": document.getElementById('add-fund').value,
-        "Cost (PHP)": document.getElementById('add-cost').value,
-        "Salvage (PHP)": document.getElementById('add-salvage').value,
+        "Cost (PHP)": parseFloat(document.getElementById('add-cost').value),
+        "Salvage (PHP)": parseFloat(document.getElementById('add-salvage').value),
         "Useful Life": document.getElementById('add-life').value,
-        "Book Value (PHP)": document.getElementById('add-salvage').value,
+        "Book Value (PHP)": parseFloat(document.getElementById('add-salvage').value),
         "Status": document.getElementById('add-status').value
       };
+
+      rawAssetData.unshift(newObj);
+      filterTable();
 
       try {
         await fetch(API_URL, {
           method: "POST",
           mode: "no-cors",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(newObj)
         });
-
-        alert("Asset saved to Google Sheet!");
-        document.getElementById('addAssetForm').reset();
-        closeAddModal();
-        setTimeout(fetchAssetData, 1500);
       } catch (err) {
         console.error("Error saving:", err);
       } finally {
         submitBtn.innerText = "💾 Save to Sheet";
         submitBtn.disabled = false;
+        document.getElementById('addAssetForm').reset();
+        closeAddModal();
       }
     }
 
@@ -659,7 +791,7 @@
       const fundFilter = document.getElementById('filterSheets').value;
       const officeFilter = document.getElementById('filterOffice').value;
 
-      const filtered = rawAssetData.filter(item => {
+      filteredAssetData = rawAssetData.filter(item => {
         const desc = String(item["Asset Description"] || '').toLowerCase();
         const prop = String(item["Property No."] || '').toLowerCase();
         const cost = parseCurrency(item["Cost (PHP)"]);
@@ -668,11 +800,8 @@
         const matchesQuery = desc.includes(q) || prop.includes(q);
         
         let matchesCat = true;
-        if (catFilter === 'Capitalized') {
-          matchesCat = capitalized;
-        } else if (catFilter === 'Semi-Expendable') {
-          matchesCat = !capitalized;
-        }
+        if (catFilter === 'Capitalized') matchesCat = capitalized;
+        else if (catFilter === 'Semi-Expendable') matchesCat = !capitalized;
 
         const matchesFund = !fundFilter || String(item["Fund"] || '') === fundFilter;
         const matchesOffice = !officeFilter || String(item["Office"] || '') === officeFilter;
@@ -680,8 +809,9 @@
         return matchesQuery && matchesCat && matchesFund && matchesOffice;
       });
 
-      renderTable(filtered);
-      calculateMetrics(filtered);
+      currentPage = 1;
+      renderTable();
+      calculateMetrics(filteredAssetData);
     }
 
     function openAddModal() {
@@ -696,7 +826,7 @@
 
     /* Sticker Modal Logic */
     function openStickerModal(index) {
-      const item = rawAssetData[index];
+      const item = filteredAssetData[index];
       const costVal = parseCurrency(item["Cost (PHP)"]);
 
       document.getElementById('st-desc').value = item["Asset Description"] || '';
@@ -751,20 +881,20 @@
 
     /* PAR Modal Logic */
     function openParModal(index) {
-      const item = rawAssetData[index];
+      const item = filteredAssetData[index];
       const costVal = parseCurrency(item["Cost (PHP)"]);
 
       document.getElementById('par-fund').value = item["Fund"] || 'GF-PPEs';
       document.getElementById('par-no').value = `PAR-${item["Property No."] || ''}`;
       document.getElementById('par-receiver').value = item["Accountable"] || '';
       
-      // Temporary values stored on preview
       document.getElementById('pv-par-desc').innerText = item["Asset Description"] || '';
       document.getElementById('pv-par-serial').innerText = item["Serial No."] || 'N/A';
       document.getElementById('pv-par-remarks').innerText = item["Status"] || 'Active Asset';
       document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
       document.getElementById('pv-par-acqdate').innerText = item["Acquisition Date"] || '';
-      document.getElementById('pv-par-date').innerText = item["Acquisition Date"] || '';
+      document.getElementById('pv-par-rec-date').innerText = item["Acquisition Date"] || '';
+      document.getElementById('pv-par-iss-date').innerText = item["Acquisition Date"] || '';
       document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
       updateParPreview();
@@ -787,10 +917,6 @@
     function closeParModal() {
       document.getElementById('parModal').classList.add('hidden');
       document.getElementById('parModal').classList.remove('flex');
-    }
-
-    function exportToExcel() {
-      alert("Exporting table data...");
     }
 
     fetchAssetData();
