@@ -8,8 +8,9 @@
   <style>
     @media print {
       body * { visibility: hidden !important; }
-      #printableArea, #printableArea * { visibility: visible !important; }
-      #printableArea {
+      #printableArea, #printableArea *,
+      #printablePARArea, #printablePARArea * { visibility: visible !important; }
+      #printableArea, #printablePARArea {
         position: fixed !important;
         left: 0 !important;
         top: 0 !important;
@@ -67,26 +68,18 @@
         <div class="flex items-center gap-2 flex-wrap">
           <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search description, prop #..." class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs w-56 text-slate-200 focus:outline-none focus:border-emerald-500/50">
           
-          <!-- Category Filter Updated -->
           <select id="filterCategory" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
             <option value="">All Categories</option>
-            <option value="Capitalized Asset">Capitalized Asset (₱50k & Above)</option>
-            <option value="Semi-Expendable Asset">Semi-Expendable Asset (Below ₱50k)</option>
+            <option value="Capitalized">Capitalized Asset (₱50k & Above)</option>
+            <option value="Semi-Expendable">Semi-Expendable Asset (Below ₱50k)</option>
           </select>
 
           <select id="filterSheets" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
             <option value="">All Funds</option>
-            <option value="GF-PPEs">GF-PPEs</option>
-            <option value="SEF">SEF</option>
-            <option value="Trust Fund">Trust Fund</option>
           </select>
 
           <select id="filterOffice" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
             <option value="">All Offices</option>
-            <option value="MAGO">MAGO</option>
-            <option value="HRMO">HRMO</option>
-            <option value="BUDGET">BUDGET</option>
-            <option value="MHO">MHO</option>
           </select>
         </div>
 
@@ -214,18 +207,14 @@
   <div id="stickerModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
       
-      <!-- Header Bar -->
       <div class="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center bg-[#0b0f19]">
         <h2 class="text-white font-bold text-base">Property Inventory Sticker</h2>
         <button onclick="closeStickerModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
 
-      <!-- Content Grid -->
       <div class="p-6 grid grid-cols-12 gap-6 overflow-y-auto">
-        
-        <!-- Left Edit Column -->
-        <div class="col-span-5 bg-[#080d19] border border-slate-800/80 p-5 rounded-xl space-y-4">
-          <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">🔥 EDIT STICKER FIELDS</h3>
+        <div class="col-span-5 bg-[#080d19] border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">🔥 EDIT STICKER FIELDS</h3>
           
           <div>
             <label class="text-[10px] text-slate-400 font-semibold block mb-1">MUNICIPALITY LOGO</label>
@@ -240,61 +229,58 @@
 
           <div>
             <label class="text-[10px] text-slate-400 font-semibold block mb-1">DESCRIPTION</label>
-            <input type="text" id="st-desc" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            <input type="text" id="st-desc" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">PROPERTY NO.</label>
-              <input type="text" id="st-prop" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-amber-400 font-bold focus:outline-none focus:border-emerald-500">
+              <input type="text" id="st-prop" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-amber-400 font-bold focus:outline-none focus:border-emerald-500">
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">SERIAL NO.</label>
-              <input type="text" id="st-serial" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="text" id="st-serial" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">COST</label>
-              <input type="text" id="st-cost" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="text" id="st-cost" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">DATE ACQUIRED</label>
-              <input type="text" id="st-date" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="text" id="st-date" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">ACCOUNTABLE</label>
-              <input type="text" id="st-accountable" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="text" id="st-accountable" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">INVENTORY DATE</label>
-              <input type="text" id="st-invdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="text" id="st-invdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">VALIDATED DATE</label>
-              <input type="text" id="st-valdate" placeholder="e.g. 24-Mar-25" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="text" id="st-valdate" placeholder="e.g. 24-Mar-25" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">PROPERTY OFFICER</label>
-              <input type="text" id="st-officer" value="ROBY MAY S TINONG" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="text" id="st-officer" value="ROBY MAY S TINONG" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
           </div>
         </div>
 
-        <!-- Right Live Preview Card -->
         <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
-          
           <div id="printableArea" class="bg-white text-slate-900 p-6 rounded border border-slate-300 w-[440px] shadow-2xl text-center">
-            
             <div class="flex flex-col items-center justify-center">
-              <img id="stickerLogo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Coat_of_arms_placeholder.svg/200px-Coat_of_arms_placeholder.svg.png" class="w-14 h-14 mb-1 hidden" alt="LGU Seal">
+              <img id="stickerLogo" src="" class="w-12 h-12 mb-1 hidden" alt="LGU Seal">
               <div class="font-bold text-[11px] leading-tight text-slate-800">
                 Republic of the Philippines<br>
                 Cordillera Administrative Region<br>
@@ -331,11 +317,8 @@
               <p class="text-[10px] text-red-600 font-bold uppercase tracking-tight">NOTE PLEASE DO NOT REMOVE!</p>
               <p class="text-[8px] text-slate-500">Unauthorized removal or tampering will be subject to disciplinary action.</p>
             </div>
-
           </div>
-
         </div>
-
       </div>
 
       <div class="px-6 py-4 border-t border-slate-800/80 bg-[#0b0f19] flex justify-end gap-3">
@@ -344,7 +327,141 @@
           🖨️ Print Sticker
         </button>
       </div>
+    </div>
+  </div>
 
+  <!-- PROPERTY ACKNOWLEDGMENT RECEIPT (PAR) MODAL -->
+  <div id="parModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      
+      <div class="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center bg-[#0b0f19]">
+        <h2 class="text-white font-bold text-base">PROPERTY ACKNOWLEDGMENT RECEIPT (PAR)</h2>
+        <button onclick="closeParModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <div class="p-6 grid grid-cols-12 gap-6 overflow-y-auto">
+        <div class="col-span-5 bg-[#080d19] border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <h3 class="text-cyan-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">✍️ EDIT PAR DETAILS</h3>
+          
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">ENTITY NAME</label>
+            <input type="text" id="par-entity" value="MUNICIPALITY OF TINEG" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">FUND CLUSTER</label>
+            <input type="text" id="par-fund" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">PAR NO.</label>
+            <input type="text" id="par-no" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-amber-400 font-bold focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">QUANTITY</label>
+              <input type="text" id="par-qty" value="1" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">UNIT</label>
+              <input type="text" id="par-unit" value="unit" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (NAME)</label>
+              <input type="text" id="par-issuer" value="ROBY MAY S TINONG" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (DESIGNATION)</label>
+              <input type="text" id="par-issuer-desig" value="Property Officer / Supply Officer" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (NAME)</label>
+              <input type="text" id="par-receiver" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (DESIGNATION)</label>
+              <input type="text" id="par-receiver-desig" value="Accountable Person" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
+          <div id="printablePARArea" class="bg-white text-slate-900 p-8 rounded border border-slate-300 w-[540px] shadow-2xl">
+            
+            <div class="text-center mb-6">
+              <h2 class="text-base font-black tracking-wide text-slate-900">PROPERTY ACKNOWLEDGMENT RECEIPT</h2>
+              <p class="text-xs text-slate-700 font-semibold">Entity Name: <span id="pv-par-entity">MUNICIPALITY OF TINEG</span></p>
+              <p class="text-xs text-slate-600">Fund Cluster: <span id="pv-par-fund">GF-PPEs</span></p>
+            </div>
+
+            <div class="flex justify-between text-xs font-bold my-3 text-slate-800">
+              <div>PAR No: <span id="pv-par-no" class="font-extrabold text-slate-900">--</span></div>
+              <div>Date: <span id="pv-par-date">--</span></div>
+            </div>
+
+            <table class="w-full border-collapse border border-slate-400 text-center my-3 text-[11px]">
+              <thead>
+                <tr class="bg-slate-100 border-b border-slate-400 text-slate-800 font-bold">
+                  <th class="border border-slate-400 p-1.5 w-12">Qty</th>
+                  <th class="border border-slate-400 p-1.5 w-14">Unit</th>
+                  <th class="border border-slate-400 p-1.5 text-left">Description</th>
+                  <th class="border border-slate-400 p-1.5 w-24">Property No.</th>
+                  <th class="border border-slate-400 p-1.5 w-20">Acq. Date</th>
+                  <th class="border border-slate-400 p-1.5 w-20">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td id="pv-par-qty" class="border border-slate-400 p-2 font-bold">1</td>
+                  <td id="pv-par-unit" class="border border-slate-400 p-2">unit</td>
+                  <td class="border border-slate-400 p-2 text-left">
+                    <p id="pv-par-desc" class="font-bold uppercase text-slate-900">--</p>
+                    <p class="text-[10px] text-slate-500">SN: <span id="pv-par-serial">--</span></p>
+                    <p class="text-[10px] text-slate-500">Remarks: <span id="pv-par-remarks">Active Asset</span></p>
+                  </td>
+                  <td id="pv-par-prop" class="border border-slate-400 p-2 font-mono text-slate-800">--</td>
+                  <td id="pv-par-acqdate" class="border border-slate-400 p-2">--</td>
+                  <td id="pv-par-amount" class="border border-slate-400 p-2 font-bold text-slate-900">--</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="grid grid-cols-2 gap-8 mt-12 pt-4 text-xs">
+              <div class="text-left">
+                <p class="text-[11px] font-bold text-slate-700 mb-8">Received by:</p>
+                <div class="border-t border-slate-800 pt-1 text-center">
+                  <p id="pv-par-receiver" class="font-black text-xs uppercase text-slate-900">--</p>
+                  <p id="pv-par-receiver-desig" class="text-[10px] text-slate-600">Accountable Person</p>
+                  <p class="text-[10px] text-slate-400 mt-2 text-left">Date: ______________</p>
+                </div>
+              </div>
+              <div class="text-left">
+                <p class="text-[11px] font-bold text-slate-700 mb-8">Issued by:</p>
+                <div class="border-t border-slate-800 pt-1 text-center">
+                  <p id="pv-par-issuer" class="font-black text-xs uppercase text-slate-900">ROBY MAY S TINONG</p>
+                  <p id="pv-par-issuer-desig" class="text-[10px] text-slate-600">Property Officer / Supply Officer</p>
+                  <p class="text-[10px] text-slate-400 mt-2 text-left">Date: ______________</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-slate-800/80 bg-[#0b0f19] flex justify-end gap-3">
+        <button onclick="closeParModal()" class="bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium px-5 py-2 rounded-lg text-xs">Close</button>
+        <button onclick="window.print()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
+          🖨️ Print PAR Form
+        </button>
+      </div>
     </div>
   </div>
 
@@ -352,7 +469,6 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
     let rawAssetData = [];
 
-    // Safe parser for numerical entries
     function parseCurrency(val) {
       if (val === undefined || val === null || val === '') return 0;
       if (typeof val === 'number') return val;
@@ -360,12 +476,10 @@
       return parseFloat(cleaned) || 0;
     }
 
-    // Determine category based on COA 50k threshold rule
-    function getAssetCategory(itemCost, rawCategory) {
-      if (rawCategory && (rawCategory.includes("Capitalized") || rawCategory.includes("Semi-Expendable"))) {
-        return rawCategory;
-      }
-      return itemCost >= 50000 ? "Capitalized Asset" : "Semi-Expendable Asset";
+    function isCapitalized(cost, rawCategory) {
+      if (rawCategory && String(rawCategory).toLowerCase().includes("capitalized")) return true;
+      if (rawCategory && String(rawCategory).toLowerCase().includes("semi")) return false;
+      return cost >= 50000;
     }
 
     async function fetchAssetData() {
@@ -375,12 +489,38 @@
       try {
         const response = await fetch(API_URL);
         rawAssetData = await response.json();
+        
+        populateDynamicDropdowns(rawAssetData);
         renderTable(rawAssetData);
         calculateMetrics(rawAssetData);
       } catch (error) {
         console.error("Error fetching data:", error);
         tbody.innerHTML = `<tr><td colspan="16" class="py-8 text-center text-red-400">Error loading asset data. Verify Google Apps Script Web App permissions.</td></tr>`;
       }
+    }
+
+    function populateDynamicDropdowns(data) {
+      const officeSelect = document.getElementById('filterOffice');
+      const fundSelect = document.getElementById('filterSheets');
+
+      const offices = [...new Set(data.map(item => item["Office"]).filter(Boolean))].sort();
+      const funds = [...new Set(data.map(item => item["Fund"]).filter(Boolean))].sort();
+
+      officeSelect.innerHTML = `<option value="">All Offices</option>`;
+      offices.forEach(office => {
+        const opt = document.createElement('option');
+        opt.value = office;
+        opt.textContent = office;
+        officeSelect.appendChild(opt);
+      });
+
+      fundSelect.innerHTML = `<option value="">All Funds</option>`;
+      funds.forEach(fund => {
+        const opt = document.createElement('option');
+        opt.value = fund;
+        opt.textContent = fund;
+        fundSelect.appendChild(opt);
+      });
     }
 
     function renderTable(data) {
@@ -399,11 +539,11 @@
         const date = item["Acquisition Date"] || 'N/A';
         const desc = item["Asset Description"] || 'N/A';
         const accountable = item["Accountable"] || 'N/A';
-        const office = item["Office"] || 'MAGO';
-        const fund = item["Fund"] || 'GF-PPEs';
+        const office = item["Office"] || 'N/A';
+        const fund = item["Fund"] || 'N/A';
         
         const cost = parseCurrency(item["Cost (PHP)"]);
-        const category = getAssetCategory(cost, item["Category"]);
+        const capitalized = isCapitalized(cost, item["Category"]);
         
         const salvage = parseCurrency(item["Salvage (PHP)"]) || (cost * 0.05);
         const life = item["Useful Life"] || '5 yrs';
@@ -417,7 +557,7 @@
           ? `<span class="bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Fully Depreciated</span>`
           : `<span class="bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Active Asset</span>`;
 
-        const categoryBadge = category === "Capitalized Asset"
+        const categoryBadge = capitalized
           ? `<span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Capitalized (≥50k)</span>`
           : `<span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Semi-Expendable (<50k)</span>`;
 
@@ -445,7 +585,7 @@
           <td class="py-2.5 px-2 text-slate-400">${remarks}</td>
           <td class="py-2.5 px-3 text-center">
             <div class="flex items-center justify-center gap-1">
-              <button onclick="openStickerModal(${index})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]">📄 PAR Form</button>
+              <button onclick="openParModal(${index})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]">📄 PAR Form</button>
               <button onclick="openStickerModal(${index})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded text-[10px]">🏷️ Sticker</button>
               <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-[10px]">✏️ Edit</button>
               <button class="bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 px-2 py-0.5 rounded text-[10px]">🗑️</button>
@@ -515,27 +655,33 @@
 
     function filterTable() {
       const q = document.getElementById('searchInput').value.toLowerCase();
-      const cat = document.getElementById('filterCategory').value;
-      const fund = document.getElementById('filterSheets').value.toLowerCase();
-      const office = document.getElementById('filterOffice').value.toLowerCase();
+      const catFilter = document.getElementById('filterCategory').value;
+      const fundFilter = document.getElementById('filterSheets').value;
+      const officeFilter = document.getElementById('filterOffice').value;
 
       const filtered = rawAssetData.filter(item => {
         const desc = String(item["Asset Description"] || '').toLowerCase();
         const prop = String(item["Property No."] || '').toLowerCase();
         const cost = parseCurrency(item["Cost (PHP)"]);
-        const itemCat = getAssetCategory(cost, item["Category"]);
-        const itemFund = String(item["Fund"] || '').toLowerCase();
-        const itemOffice = String(item["Office"] || '').toLowerCase();
-
+        const capitalized = isCapitalized(cost, item["Category"]);
+        
         const matchesQuery = desc.includes(q) || prop.includes(q);
-        const matchesCat = !cat || itemCat === cat;
-        const matchesFund = !fund || itemFund.includes(fund);
-        const matchesOffice = !office || itemOffice.includes(office);
+        
+        let matchesCat = true;
+        if (catFilter === 'Capitalized') {
+          matchesCat = capitalized;
+        } else if (catFilter === 'Semi-Expendable') {
+          matchesCat = !capitalized;
+        }
+
+        const matchesFund = !fundFilter || String(item["Fund"] || '') === fundFilter;
+        const matchesOffice = !officeFilter || String(item["Office"] || '') === officeFilter;
 
         return matchesQuery && matchesCat && matchesFund && matchesOffice;
       });
 
       renderTable(filtered);
+      calculateMetrics(filtered);
     }
 
     function openAddModal() {
@@ -548,6 +694,7 @@
       document.getElementById('addModal').classList.remove('flex');
     }
 
+    /* Sticker Modal Logic */
     function openStickerModal(index) {
       const item = rawAssetData[index];
       const costVal = parseCurrency(item["Cost (PHP)"]);
@@ -600,6 +747,46 @@
     function closeStickerModal() {
       document.getElementById('stickerModal').classList.add('hidden');
       document.getElementById('stickerModal').classList.remove('flex');
+    }
+
+    /* PAR Modal Logic */
+    function openParModal(index) {
+      const item = rawAssetData[index];
+      const costVal = parseCurrency(item["Cost (PHP)"]);
+
+      document.getElementById('par-fund').value = item["Fund"] || 'GF-PPEs';
+      document.getElementById('par-no').value = `PAR-${item["Property No."] || ''}`;
+      document.getElementById('par-receiver').value = item["Accountable"] || '';
+      
+      // Temporary values stored on preview
+      document.getElementById('pv-par-desc').innerText = item["Asset Description"] || '';
+      document.getElementById('pv-par-serial').innerText = item["Serial No."] || 'N/A';
+      document.getElementById('pv-par-remarks').innerText = item["Status"] || 'Active Asset';
+      document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
+      document.getElementById('pv-par-acqdate').innerText = item["Acquisition Date"] || '';
+      document.getElementById('pv-par-date').innerText = item["Acquisition Date"] || '';
+      document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      updateParPreview();
+      document.getElementById('parModal').classList.remove('hidden');
+      document.getElementById('parModal').classList.add('flex');
+    }
+
+    function updateParPreview() {
+      document.getElementById('pv-par-entity').innerText = document.getElementById('par-entity').value;
+      document.getElementById('pv-par-fund').innerText = document.getElementById('par-fund').value;
+      document.getElementById('pv-par-no').innerText = document.getElementById('par-no').value;
+      document.getElementById('pv-par-qty').innerText = document.getElementById('par-qty').value;
+      document.getElementById('pv-par-unit').innerText = document.getElementById('par-unit').value;
+      document.getElementById('pv-par-receiver').innerText = document.getElementById('par-receiver').value;
+      document.getElementById('pv-par-receiver-desig').innerText = document.getElementById('par-receiver-desig').value;
+      document.getElementById('pv-par-issuer').innerText = document.getElementById('par-issuer').value;
+      document.getElementById('pv-par-issuer-desig').innerText = document.getElementById('par-issuer-desig').value;
+    }
+
+    function closeParModal() {
+      document.getElementById('parModal').classList.add('hidden');
+      document.getElementById('parModal').classList.remove('flex');
     }
 
     function exportToExcel() {
