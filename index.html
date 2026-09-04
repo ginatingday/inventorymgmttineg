@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Local Asset Inventory - LGU Tineg</title>
+  <title>LGU TINEG - Local Asset Inventory</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Print Styles: Hides dashboard UI and prints ONLY the document card */
     @media print {
       body * { visibility: hidden; }
       #printableArea, #printableArea * { visibility: visible; }
@@ -15,75 +14,116 @@
         left: 0;
         top: 0;
         width: 100%;
-        margin: 0;
-        padding: 0;
         box-shadow: none !important;
       }
       .no-print { display: none !important; }
     }
+    /* Custom Scrollbar for Dark Theme */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; rounded: 3px; }
   </style>
 </head>
-<body class="bg-[#0b0f19] text-slate-200 font-sans min-h-screen">
+<body class="bg-[#060911] text-slate-200 font-sans min-h-screen text-xs">
 
-  <div class="flex">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-[#111827] min-h-screen p-4 border-r border-slate-800 no-print">
-      <div class="flex items-center gap-2 mb-8">
-        <div class="w-8 h-8 bg-emerald-500 rounded flex items-center justify-center font-bold text-slate-900">L</div>
+  <div class="flex min-h-screen">
+    <!-- Left Sidebar -->
+    <aside class="w-56 bg-[#0b0f19] p-4 border-r border-slate-800/60 no-print flex-shrink-0">
+      <div class="flex items-center gap-2.5 mb-8 px-1">
+        <div class="w-7 h-7 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded flex items-center justify-center font-bold text-sm">L</div>
         <div>
-          <h1 class="text-sm font-bold leading-tight">LGU TINEG</h1>
-          <p class="text-xs text-slate-400">Local Asset Inventory</p>
+          <h1 class="text-xs font-bold text-white tracking-wide leading-tight">LGU TINEG</h1>
+          <p class="text-[10px] text-slate-400">Local Asset Inventory</p>
         </div>
       </div>
-      <button class="w-full text-left bg-slate-800 text-emerald-400 px-4 py-2.5 rounded-lg font-medium text-sm border border-slate-700">
-        📊 General Ledger
+      <button class="w-full text-left bg-emerald-950/40 text-emerald-400 px-3 py-2 rounded border border-emerald-500/30 font-medium text-xs flex items-center gap-2">
+        📄 General Ledger
       </button>
     </aside>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 p-8 no-print">
-      <!-- Top Metrics -->
-      <div class="grid grid-cols-3 gap-6 mb-8">
-        <div class="bg-[#111827] border border-slate-800 p-5 rounded-xl">
-          <p class="text-xs uppercase text-slate-400 font-semibold mb-1">Total Ledger Assets</p>
-          <h2 class="text-3xl font-bold text-white" id="stat-total-items">0 Items</h2>
+    <!-- Main Workspace -->
+    <main class="flex-1 p-6 no-print overflow-x-auto">
+      
+      <!-- Top Summary Cards -->
+      <div class="grid grid-cols-3 gap-5 mb-6">
+        <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
+          <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">TOTAL LEDGER ASSETS</p>
+          <h2 class="text-2xl font-black text-white" id="stat-total-items">0 Items</h2>
+          <div class="absolute right-3 bottom-3 opacity-10 text-slate-400 text-3xl">📦</div>
         </div>
-        <div class="bg-[#111827] border border-slate-800 p-5 rounded-xl">
-          <p class="text-xs uppercase text-slate-400 font-semibold mb-1">Total Historic Cost</p>
-          <h2 class="text-3xl font-bold text-emerald-400" id="stat-total-cost">₱0.00</h2>
+        <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
+          <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">TOTAL HISTORIC COST</p>
+          <h2 class="text-2xl font-black text-emerald-400" id="stat-total-cost">₱0.00</h2>
+          <div class="absolute right-3 bottom-3 opacity-10 text-emerald-400 text-3xl">💵</div>
         </div>
-        <div class="bg-[#111827] border border-slate-800 p-5 rounded-xl">
-          <p class="text-xs uppercase text-slate-400 font-semibold mb-1">Net Book Value</p>
-          <h2 class="text-3xl font-bold text-cyan-400" id="stat-book-value">₱0.00</h2>
-        </div>
-      </div>
-
-      <!-- Controls -->
-      <div class="flex justify-between items-center mb-6">
-        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search description, prop #..." class="bg-[#111827] border border-slate-800 px-4 py-2 rounded-lg text-sm w-72 focus:outline-none focus:border-emerald-500">
-        <div class="flex gap-3">
-          <button onclick="fetchAssetData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-sm px-4 py-2 rounded-lg font-medium">🔄 Refresh Data</button>
-          <button onclick="openAddModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-4 py-2 rounded-lg font-medium">+ Add Capital Asset</button>
+        <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
+          <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">NET BOOK VALUE</p>
+          <h2 class="text-2xl font-black text-cyan-400" id="stat-book-value">₱0.00</h2>
+          <div class="absolute right-3 bottom-3 opacity-10 text-cyan-400 text-3xl">📊</div>
         </div>
       </div>
 
-      <!-- Dynamic Data Table -->
-      <div class="bg-[#111827] border border-slate-800 rounded-xl overflow-hidden">
-        <table class="w-full text-left text-xs text-slate-300">
-          <thead class="bg-[#1f2937] text-slate-400 uppercase font-semibold">
+      <!-- Filters & Action Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2 flex-wrap">
+          <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search description, prop #..." class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs w-56 text-slate-200 focus:outline-none focus:border-emerald-500/50">
+          
+          <select id="filterCategory" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
+            <option value="">All Categories</option>
+            <option value="ICT Equipment">ICT Equipment</option>
+            <option value="Motor Vehicles">Motor Vehicles</option>
+            <option value="Office Equipment">Office Equipment</option>
+          </select>
+
+          <select id="filterSheets" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
+            <option value="">All Sheets / Funds</option>
+            <option value="GF-PPEs">GF-PPEs</option>
+            <option value="SEF">SEF</option>
+            <option value="Trust Fund">Trust Fund</option>
+          </select>
+
+          <select id="filterOffice" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
+            <option value="">MAGO</option>
+            <option value="HRMO">HRMO</option>
+            <option value="BUDGET">BUDGET</option>
+            <option value="MHO">MHO</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="fetchAssetData()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📥 Import Excel</button>
+          <button onclick="exportToExcel()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📄 Export Excel</button>
+          <button onclick="window.print()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📄 Export PDF</button>
+          <button onclick="openAddModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-1.5 rounded transition-all flex items-center gap-1">
+            <span>+</span> Add Capital Asset
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Ledger Table -->
+      <div class="bg-[#0b0f19] border border-slate-800/80 rounded-lg overflow-x-auto shadow-2xl">
+        <table class="w-full text-left text-[11px] whitespace-nowrap">
+          <thead class="bg-[#0f1523] text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
             <tr>
-              <th class="p-3">Property No.</th>
-              <th class="p-3">Acquisition Date</th>
-              <th class="p-3">Asset Description</th>
-              <th class="p-3">Accountable</th>
-              <th class="p-3">Cost</th>
-              <th class="p-3">Book Value</th>
-              <th class="p-3 text-center">Actions</th>
+              <th class="py-3 px-2 text-center">PHOTOS</th>
+              <th class="py-3 px-2">PROPERTY NO.</th>
+              <th class="py-3 px-2">ACQUISITION DATE</th>
+              <th class="py-3 px-3">ASSET DESCRIPTION</th>
+              <th class="py-3 px-2">ACCOUNTABLE</th>
+              <th class="py-3 px-2">ASSIGNED OFFICE</th>
+              <th class="py-3 px-2">FUND ORIGIN</th>
+              <th class="py-3 px-2 text-right">COST</th>
+              <th class="py-3 px-2 text-right">SALVAGE</th>
+              <th class="py-3 px-2 text-center">LIFE</th>
+              <th class="py-3 px-2 text-right">BOOK VALUE</th>
+              <th class="py-3 px-2 text-center">STATUS</th>
+              <th class="py-3 px-2">REMARKS</th>
+              <th class="py-3 px-3 text-center">ACTIONS</th>
             </tr>
           </thead>
-          <tbody id="asset-table-body" class="divide-y divide-slate-800">
+          <tbody id="asset-table-body" class="divide-y divide-slate-800/50 text-slate-300">
             <tr>
-              <td colspan="7" class="p-6 text-center text-slate-500">Loading asset data from Google Sheets...</td>
+              <td colspan="14" class="py-8 text-center text-slate-500">Loading asset records from Google Sheet...</td>
             </tr>
           </tbody>
         </table>
@@ -91,142 +131,198 @@
     </main>
   </div>
 
-  <!-- ADD ASSET MODAL (Saves to Google Sheets) -->
+  <!-- ADD ASSET MODAL -->
   <div id="addModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
-    <div class="bg-[#0b0f19] border border-slate-800 rounded-xl w-full max-w-lg p-6">
-      <h3 class="text-emerald-400 font-bold text-base mb-4">➕ ADD NEW CAPITAL ASSET</h3>
-      <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-3 text-xs">
-        <div>
-          <label class="text-slate-400">PROPERTY NO.</label>
-          <input type="text" id="add-prop" required placeholder="e.g. I-001-2026" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-amber-400 font-bold focus:outline-none focus:border-emerald-500">
-        </div>
-        <div>
-          <label class="text-slate-400">ACQUISITION DATE</label>
-          <input type="date" id="add-date" required class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
-        </div>
-        <div>
-          <label class="text-slate-400">ASSET DESCRIPTION</label>
-          <input type="text" id="add-desc" required placeholder="e.g. 1 UNIT SPEAKER" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
-        </div>
-        <div>
-          <label class="text-slate-400">ACCOUNTABLE PERSON</label>
-          <input type="text" id="add-accountable" required placeholder="e.g. SETH JOSHUA DANNANG" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-lg p-5">
+      <h3 class="text-emerald-400 font-bold text-sm mb-4">➕ ADD CAPITAL ASSET</h3>
+      <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-2.5 text-xs">
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-slate-400">COST (₱)</label>
-            <input type="number" step="0.01" id="add-cost" required placeholder="19500.00" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+            <label class="text-slate-400 text-[10px]">PROPERTY NO.</label>
+            <input type="text" id="add-prop" required placeholder="XV-001" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-amber-400 font-bold">
           </div>
           <div>
-            <label class="text-slate-400">BOOK VALUE (₱)</label>
-            <input type="number" step="0.01" id="add-book" required placeholder="19500.00" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+            <label class="text-slate-400 text-[10px]">ACQUISITION DATE</label>
+            <input type="date" id="add-date" required class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
         </div>
         <div>
-          <label class="text-slate-400">SERIAL NO.</label>
-          <input type="text" id="add-serial" placeholder="e.g. 13250513129" class="w-full bg-[#111827] border border-slate-800 p-2.5 rounded mt-1 text-white focus:outline-none focus:border-emerald-500">
+          <label class="text-slate-400 text-[10px]">ASSET DESCRIPTION</label>
+          <input type="text" id="add-desc" required placeholder="Desktop Monitor" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
         </div>
-        
-        <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-800">
-          <button type="button" onclick="closeAddModal()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded text-xs">Cancel</button>
-          <button type="submit" id="submitBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded text-xs">💾 Save to Sheet</button>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">ACCOUNTABLE PERSON</label>
+            <input type="text" id="add-accountable" placeholder="N/A" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">ASSIGNED OFFICE</label>
+            <input type="text" id="add-office" value="MAGO" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">COST (₱)</label>
+            <input type="number" step="0.01" id="add-cost" required placeholder="4900.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">SALVAGE (₱)</label>
+            <input type="number" step="0.01" id="add-salvage" placeholder="245.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">LIFE (YRS)</label>
+            <input type="number" id="add-life" value="5" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">FUND ORIGIN</label>
+            <input type="text" id="add-fund" value="GF-PPEs" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">STATUS</label>
+            <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+              <option value="Fully Depreciated">Fully Depreciated</option>
+              <option value="Active Asset">Active Asset</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeAddModal()" class="bg-slate-800 text-slate-300 px-3 py-1.5 rounded">Cancel</button>
+          <button type="submit" id="submitBtn" class="bg-emerald-500 text-slate-950 font-bold px-3 py-1.5 rounded">💾 Save to Sheet</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- PROPERTY INVENTORY STICKER MODAL -->
+  <!-- STICKER PREVIEW MODAL -->
   <div id="stickerModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
-    <div class="bg-[#0b0f19] border border-slate-800 rounded-xl w-full max-w-5xl flex overflow-hidden max-h-[90vh]">
-      <!-- Left Controls -->
-      <div class="w-1/3 p-6 border-r border-slate-800 overflow-y-auto">
-        <h3 class="text-emerald-400 font-bold text-sm mb-4">🔥 EDIT STICKER FIELDS</h3>
-        <div class="space-y-3 text-xs">
-          <div>
-            <label class="text-slate-400">DESCRIPTION</label>
-            <input type="text" id="st-desc" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 p-2 rounded mt-1 text-white">
-          </div>
-          <div>
-            <label class="text-slate-400">PROPERTY NO.</label>
-            <input type="text" id="st-prop" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 p-2 rounded mt-1 text-amber-400 font-bold">
-          </div>
-          <div>
-            <label class="text-slate-400">SERIAL NO.</label>
-            <input type="text" id="st-serial" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 p-2 rounded mt-1 text-white">
-          </div>
-          <div>
-            <label class="text-slate-400">COST</label>
-            <input type="text" id="st-cost" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 p-2 rounded mt-1 text-white">
-          </div>
-          <div>
-            <label class="text-slate-400">ACCOUNTABLE</label>
-            <input type="text" id="st-accountable" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 p-2 rounded mt-1 text-white">
-          </div>
-          <div>
-            <label class="text-slate-400">PROPERTY OFFICER</label>
-            <input type="text" id="st-officer" value="ROBY MAY S TINONG" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 p-2 rounded mt-1 text-white">
-          </div>
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-4xl flex overflow-hidden max-h-[90vh]">
+      <div class="w-1/3 p-4 border-r border-slate-800 overflow-y-auto">
+        <h3 class="text-emerald-400 font-bold mb-3">🏷️ STICKER DETAILS</h3>
+        <div class="space-y-2 text-xs">
+          <div><label class="text-slate-400">DESCRIPTION</label><input type="text" id="st-desc" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-white"></div>
+          <div><label class="text-slate-400">PROPERTY NO.</label><input type="text" id="st-prop" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-amber-400 font-bold"></div>
+          <div><label class="text-slate-400">SERIAL NO.</label><input type="text" id="st-serial" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-white"></div>
+          <div><label class="text-slate-400">COST</label><input type="text" id="st-cost" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-white"></div>
+          <div><label class="text-slate-400">ACCOUNTABLE</label><input type="text" id="st-accountable" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-white"></div>
         </div>
-        <div class="mt-6 flex justify-between">
-          <button onclick="closeStickerModal()" class="bg-slate-800 px-4 py-2 rounded text-xs text-slate-300">Close</button>
-          <button onclick="window.print()" class="bg-emerald-500 text-slate-950 font-bold px-4 py-2 rounded text-xs">🖨️ Print Sticker</button>
+        <div class="mt-4 flex justify-between">
+          <button onclick="closeStickerModal()" class="bg-slate-800 px-3 py-1.5 rounded text-slate-300">Close</button>
+          <button onclick="window.print()" class="bg-emerald-500 text-slate-950 font-bold px-3 py-1.5 rounded">🖨️ Print Sticker</button>
         </div>
       </div>
-
-      <!-- Right Printable Area -->
-      <div class="w-2/3 p-8 bg-slate-900 flex justify-center items-center overflow-y-auto">
-        <div id="printableArea" class="bg-white text-slate-900 p-6 rounded-sm w-[420px] border border-slate-300 shadow-xl text-center text-xs">
-          <div class="font-bold text-[10px] leading-tight uppercase">
-            Republic of the Philippines<br>
-            Cordillera Administrative Region<br>
-            Province of Abra<br>
+      <div class="w-2/3 p-6 bg-slate-950 flex justify-center items-center">
+        <div id="printableArea" class="bg-white text-slate-900 p-5 rounded-sm w-[380px] border border-slate-300 shadow-2xl text-center text-xs">
+          <div class="font-bold text-[9px] uppercase leading-tight">
+            Republic of the Philippines<br>Province of Abra<br>
             <span class="text-xs font-black">MUNICIPALITY OF TINEG</span>
           </div>
-          <div class="border-b-2 border-slate-800 font-bold my-2 py-0.5 tracking-wide uppercase">
+          <div class="border-b-2 border-slate-900 font-bold my-1.5 py-0.5 tracking-wider uppercase text-[11px]">
             PROPERTY INVENTORY STICKER
           </div>
-          <table class="w-full border-collapse border border-slate-400 text-left my-2 font-mono text-[11px]">
-            <tr><td class="border border-slate-400 p-1 font-bold w-1/3">Property Description:</td><td id="pv-st-desc" class="border border-slate-400 p-1 font-bold uppercase">--</td></tr>
-            <tr><td class="border border-slate-400 p-1 font-bold">Property Number:</td><td id="pv-st-prop" class="border border-slate-400 p-1 font-bold text-amber-700">--</td></tr>
-            <tr><td class="border border-slate-400 p-1 font-bold">Serial Number:</td><td id="pv-st-serial" class="border border-slate-400 p-1">--</td></tr>
-            <tr><td class="border border-slate-400 p-1 font-bold">Acquisition Cost:</td><td id="pv-st-cost" class="border border-slate-400 p-1">--</td></tr>
+          <table class="w-full border-collapse border border-slate-400 text-left my-2 font-mono text-[10px]">
+            <tr><td class="border border-slate-400 p-1 font-bold w-1/3">Description:</td><td id="pv-st-desc" class="border border-slate-400 p-1 font-bold uppercase">--</td></tr>
+            <tr><td class="border border-slate-400 p-1 font-bold">Property No:</td><td id="pv-st-prop" class="border border-slate-400 p-1 font-bold text-amber-700">--</td></tr>
+            <tr><td class="border border-slate-400 p-1 font-bold">Serial No:</td><td id="pv-st-serial" class="border border-slate-400 p-1">--</td></tr>
+            <tr><td class="border border-slate-400 p-1 font-bold">Cost:</td><td id="pv-st-cost" class="border border-slate-400 p-1">--</td></tr>
             <tr><td class="border border-slate-400 p-1 font-bold">Accountable:</td><td id="pv-st-accountable" class="border border-slate-400 p-1 font-bold uppercase">--</td></tr>
           </table>
-          <div class="mt-4 pt-2 border-t border-slate-400">
-            <p id="pv-st-officer" class="font-bold uppercase text-[11px]">ROBY MAY S TINONG</p>
-            <p class="text-[9px] text-slate-500">Property Officer</p>
-          </div>
-          <p class="text-[9px] text-red-600 font-bold mt-3">NOTE: PLEASE DO NOT REMOVE!</p>
-          <p class="text-[8px] text-slate-500">Unauthorized removal or tampering will be subject to disciplinary action.</p>
+          <p class="text-[8px] text-red-600 font-bold mt-2">DO NOT REMOVE UNDER PENALTY OF LAW</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- JavaScript Integration -->
   <script>
-    // Updated Web App URL
     const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
     let rawAssetData = [];
 
-    // GET Request: Fetch Data from Google Sheets
     async function fetchAssetData() {
       const tbody = document.getElementById('asset-table-body');
-      tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Fetching live data from Google Sheets...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="14" class="py-8 text-center text-slate-400">Fetching asset ledger...</td></tr>`;
 
       try {
         const response = await fetch(API_URL);
         rawAssetData = await response.json();
-        
         renderTable(rawAssetData);
         calculateMetrics(rawAssetData);
       } catch (error) {
         console.error("Error fetching data:", error);
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-400">Failed to load data. Ensure your Web App permissions are set to 'Anyone'.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" class="py-8 text-center text-red-400">Error loading asset data. Verify Google Apps Script Web App permissions.</td></tr>`;
       }
     }
 
-    // POST Request: Submit New Asset to Google Sheets
+    function renderTable(data) {
+      const tbody = document.getElementById('asset-table-body');
+      tbody.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="14" class="py-8 text-center text-slate-500">No matching assets found.</td></tr>`;
+        return;
+      }
+
+      data.forEach((item, index) => {
+        const propNo = item["PROPERTY NO."] || item["Property No."] || 'N/A';
+        const date = item["ACQUISITION DATE"] || item["Acquisition Date"] || 'N/A';
+        const desc = item["ASSET DESCRIPTION"] || item["Asset Description"] || 'N/A';
+        const accountable = item["ACCOUNTABLE"] || 'N/A';
+        const office = item["ASSIGNED OFFICE"] || item["Assigned Office"] || 'MAGO';
+        const fund = item["FUND ORIGIN"] || item["Fund Origin"] || 'GF-PPEs';
+        const cost = Number(item["COST"] || item["Cost"] || 0);
+        const salvage = Number(item["SALVAGE"] || item["Salvage"] || (cost * 0.05));
+        const life = item["LIFE"] || item["Life"] || '5 yrs';
+        const bookVal = Number(item["BOOK VALUE"] || item["Book Value"] || salvage);
+        const status = item["STATUS"] || item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
+        const remarks = item["REMARKS"] || item["Remarks"] || status;
+
+        const isDepreciated = status.toLowerCase().includes('fully');
+        const statusBadge = isDepreciated 
+          ? `<span class="bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Fully Depreciated</span>`
+          : `<span class="bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Active Asset</span>`;
+
+        const row = document.createElement('tr');
+        row.className = "hover:bg-slate-800/30 transition-colors border-b border-slate-800/40";
+        row.innerHTML = `
+          <td class="py-2.5 px-2 text-center">
+            <button class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium flex items-center gap-1 mx-auto">
+              📷 + Photo
+            </button>
+          </td>
+          <td class="py-2.5 px-2 font-mono font-bold text-amber-400">${propNo}</td>
+          <td class="py-2.5 px-2 text-slate-300">${date}</td>
+          <td class="py-2.5 px-3 font-semibold text-white max-w-xs truncate">${desc}</td>
+          <td class="py-2.5 px-2 text-slate-300">${accountable}</td>
+          <td class="py-2.5 px-2"><span class="bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded text-[10px] font-bold">${office}</span></td>
+          <td class="py-2.5 px-2"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]">${fund}</span></td>
+          <td class="py-2.5 px-2 text-right font-mono text-slate-200">₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-slate-400">₱${salvage.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-center text-emerald-400 font-medium">${life}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-cyan-400 font-bold">₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-center">${statusBadge}</td>
+          <td class="py-2.5 px-2 text-slate-400">${remarks}</td>
+          <td class="py-2.5 px-3 text-center">
+            <div class="flex items-center justify-center gap-1">
+              <button onclick="openStickerModal(${index})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]">📄 PAR Form</button>
+              <button onclick="openStickerModal(${index})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded text-[10px]">🏷️ Sticker</button>
+              <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-[10px]">✏️ Edit</button>
+              <button class="bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 px-2 py-0.5 rounded text-[10px]">🗑️</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function calculateMetrics(data) {
+      document.getElementById('stat-total-items').innerText = `${data.length} Items`;
+      const totalCost = data.reduce((acc, curr) => acc + Number(curr["COST"] || curr["Cost"] || 0), 0);
+      const totalBook = data.reduce((acc, curr) => acc + Number(curr["BOOK VALUE"] || curr["Book Value"] || 0), 0);
+
+      document.getElementById('stat-total-cost').innerText = `₱${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    }
+
     async function submitNewAsset(e) {
       e.preventDefault();
       const submitBtn = document.getElementById('submitBtn');
@@ -238,9 +334,13 @@
         acquisitionDate: document.getElementById('add-date').value,
         assetDescription: document.getElementById('add-desc').value,
         accountable: document.getElementById('add-accountable').value,
+        office: document.getElementById('add-office').value,
+        fund: document.getElementById('add-fund').value,
         cost: document.getElementById('add-cost').value,
-        bookValue: document.getElementById('add-book').value,
-        serialNo: document.getElementById('add-serial').value || 'N/A'
+        salvage: document.getElementById('add-salvage').value,
+        life: document.getElementById('add-life').value + ' yrs',
+        bookValue: document.getElementById('add-salvage').value,
+        status: document.getElementById('add-status').value
       };
 
       try {
@@ -251,91 +351,57 @@
           body: JSON.stringify(payload)
         });
 
-        alert("New asset submitted to Google Sheet!");
+        alert("Asset saved to Google Sheet!");
         document.getElementById('addAssetForm').reset();
         closeAddModal();
-        
-        // Wait 1.5 seconds for Apps Script to write row before refreshing
         setTimeout(fetchAssetData, 1500);
       } catch (err) {
-        console.error("Error adding asset:", err);
-        alert("Failed to submit asset.");
+        console.error("Error saving:", err);
       } finally {
         submitBtn.innerText = "💾 Save to Sheet";
         submitBtn.disabled = false;
       }
     }
 
-    function renderTable(data) {
-      const tbody = document.getElementById('asset-table-body');
-      tbody.innerHTML = '';
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const cat = document.getElementById('filterCategory').value.toLowerCase();
+      const fund = document.getElementById('filterSheets').value.toLowerCase();
 
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">No records found inside Google Sheet.</td></tr>`;
-        return;
-      }
+      const filtered = rawAssetData.filter(item => {
+        const desc = (item["ASSET DESCRIPTION"] || item["Asset Description"] || '').toLowerCase();
+        const prop = (item["PROPERTY NO."] || item["Property No."] || '').toLowerCase();
+        const itemFund = (item["FUND ORIGIN"] || item["Fund Origin"] || 'gf-ppes').toLowerCase();
 
-      data.forEach((item, index) => {
-        const propNo = item["PROPERTY NO."] || item["Property No."] || item["PROPERTY NO"] || 'N/A';
-        const date = item["ACQUISITION DATE"] || item["Acquisition Date"] || item["DATE"] || 'N/A';
-        const desc = item["ASSET DESCRIPTION"] || item["Asset Description"] || item["DESCRIPTION"] || 'N/A';
-        const accountable = item["ACCOUNTABLE"] || item["Accountable"] || 'N/A';
-        const cost = Number(item["COST"] || item["Cost"] || 0);
-        const bookVal = Number(item["BOOK VALUE"] || item["Book Value"] || 0);
-
-        const row = document.createElement('tr');
-        row.className = "hover:bg-slate-800/50 transition-colors";
-        row.innerHTML = `
-          <td class="p-3 font-mono text-amber-400 font-bold">${propNo}</td>
-          <td class="p-3">${date}</td>
-          <td class="p-3 font-medium text-white">${desc}</td>
-          <td class="p-3">${accountable}</td>
-          <td class="p-3">₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-          <td class="p-3 text-cyan-400">₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-          <td class="p-3 flex justify-center gap-2">
-            <button onclick="openStickerModal(${index})" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-2.5 py-1 rounded text-xs flex items-center gap-1">🏷️ Sticker</button>
-          </td>
-        `;
-        tbody.appendChild(row);
+        const matchesQuery = desc.includes(q) || prop.includes(q);
+        const matchesFund = !fund || itemFund.includes(fund);
+        return matchesQuery && matchesFund;
       });
-    }
 
-    function calculateMetrics(data) {
-      document.getElementById('stat-total-items').innerText = `${data.length} Items`;
-      
-      const totalCost = data.reduce((acc, curr) => acc + Number(curr["COST"] || curr["Cost"] || 0), 0);
-      const totalBook = data.reduce((acc, curr) => acc + Number(curr["BOOK VALUE"] || curr["Book Value"] || 0), 0);
-
-      document.getElementById('stat-total-cost').innerText = `₱${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-      document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      renderTable(filtered);
     }
 
     function openAddModal() {
-      const modal = document.getElementById('addModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      document.getElementById('addModal').classList.remove('hidden');
+      document.getElementById('addModal').classList.add('flex');
     }
 
     function closeAddModal() {
-      const modal = document.getElementById('addModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      document.getElementById('addModal').classList.add('hidden');
+      document.getElementById('addModal').classList.remove('flex');
     }
 
     function openStickerModal(index) {
       const item = rawAssetData[index];
-      
       document.getElementById('st-desc').value = item["ASSET DESCRIPTION"] || item["Asset Description"] || '';
       document.getElementById('st-prop').value = item["PROPERTY NO."] || item["Property No."] || '';
       document.getElementById('st-serial').value = item["SERIAL NO."] || item["Serial No."] || 'N/A';
       document.getElementById('st-cost').value = `₱${Number(item["COST"] || item["Cost"] || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-      document.getElementById('st-accountable').value = item["ACCOUNTABLE"] || item["Accountable"] || '';
+      document.getElementById('st-accountable').value = item["ACCOUNTABLE"] || item["Accountable"] || 'N/A';
 
       updateStickerPreview();
-      
-      const modal = document.getElementById('stickerModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      document.getElementById('stickerModal').classList.remove('hidden');
+      document.getElementById('stickerModal').classList.add('flex');
     }
 
     function updateStickerPreview() {
@@ -344,26 +410,17 @@
       document.getElementById('pv-st-serial').innerText = document.getElementById('st-serial').value;
       document.getElementById('pv-st-cost').innerText = document.getElementById('st-cost').value;
       document.getElementById('pv-st-accountable').innerText = document.getElementById('st-accountable').value;
-      document.getElementById('pv-st-officer').innerText = document.getElementById('st-officer').value;
     }
 
     function closeStickerModal() {
-      const modal = document.getElementById('stickerModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      document.getElementById('stickerModal').classList.add('hidden');
+      document.getElementById('stickerModal').classList.remove('flex');
     }
 
-    function filterTable() {
-      const query = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = rawAssetData.filter(item => {
-        const desc = (item["ASSET DESCRIPTION"] || item["Asset Description"] || '').toLowerCase();
-        const prop = (item["PROPERTY NO."] || item["Property No."] || '').toLowerCase();
-        return desc.includes(query) || prop.includes(query);
-      });
-      renderTable(filtered);
+    function exportToExcel() {
+      alert("Exporting table data to CSV/Excel...");
     }
 
-    // Load data automatically when page opens
     fetchAssetData();
   </script>
 </body>
