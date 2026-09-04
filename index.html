@@ -174,6 +174,7 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-slate-400 text-[10px]">Acquisition Date</label>
+            <!-- Strict Date Input (No Time) -->
             <input type="date" id="add-date" required class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
@@ -324,7 +325,8 @@
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">DATE ACQUIRED</label>
-              <input type="text" id="st-date" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <!-- Strict Date Input (No Time) -->
+              <input type="date" id="st-date" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
           </div>
 
@@ -335,14 +337,16 @@
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">INVENTORY DATE</label>
-              <input type="text" id="st-invdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <!-- Strict Date Input (No Time) -->
+              <input type="date" id="st-invdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">VALIDATED DATE</label>
-              <input type="text" id="st-valdate" placeholder="e.g. 24-Mar-25" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <!-- Strict Date Input (No Time) -->
+              <input type="date" id="st-valdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">PROPERTY OFFICER</label>
@@ -567,6 +571,14 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
     
+    // Helper function to convert ISO dates/timestamps to strictly YYYY-MM-DD
+    function formatDateOnly(dateStr) {
+      if (!dateStr || dateStr === 'N/A') return 'N/A';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr.split('T')[0]; // fallback split
+      return d.toISOString().split('T')[0];
+    }
+
     // 20 Mock Data Entries
     const mock20Assets = [
       {"Property No.": "XV-001", "Serial No.": "SN-99812", "Acquisition Date": "2023-01-15", "Asset Description": "Desktop Workstation i7", "Accountable": "JUAN DELA CRUZ", "Category": "Capitalized Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 65000, "Salvage (PHP)": 3250, "Useful Life": "5 yrs", "Book Value (PHP)": 3250, "Status": "Fully Depreciated", "Remarks": "Good working condition"},
@@ -683,7 +695,7 @@
         const photoUrl = item["Photos"] || '';
         const propNo = item["Property No."] || 'N/A';
         const serialNo = item["Serial No."] || 'N/A';
-        const date = item["Acquisition Date"] || 'N/A';
+        const date = formatDateOnly(item["Acquisition Date"]);
         const desc = item["Asset Description"] || 'N/A';
         const accountable = item["Accountable"] || 'N/A';
         const office = item["Office"] || 'N/A';
@@ -826,7 +838,7 @@
       const newObj = {
         "Property No.": document.getElementById('add-prop').value,
         "Serial No.": document.getElementById('add-serial').value,
-        "Acquisition Date": document.getElementById('add-date').value,
+        "Acquisition Date": formatDateOnly(document.getElementById('add-date').value),
         "Asset Description": document.getElementById('add-desc').value,
         "Accountable": document.getElementById('add-accountable').value,
         "Category": document.getElementById('add-category').value,
@@ -937,7 +949,7 @@
       const excelData = filteredAssetData.map(item => ({
         "Property No.": item["Property No."] || '',
         "Serial No.": item["Serial No."] || '',
-        "Acquisition Date": item["Acquisition Date"] || '',
+        "Acquisition Date": formatDateOnly(item["Acquisition Date"]),
         "Asset Description": item["Asset Description"] || '',
         "Accountable": item["Accountable"] || '',
         "Office": item["Office"] || '',
@@ -975,7 +987,7 @@
       const rows = filteredAssetData.map(item => [
         item["Property No."] || '',
         item["Serial No."] || '',
-        item["Acquisition Date"] || '',
+        formatDateOnly(item["Acquisition Date"]),
         item["Asset Description"] || '',
         item["Accountable"] || '',
         item["Office"] || '',
@@ -1007,9 +1019,9 @@
       document.getElementById('st-prop').value = item["Property No."] || '';
       document.getElementById('st-serial').value = item["Serial No."] || 'N/A';
       document.getElementById('st-cost').value = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-      document.getElementById('st-date').value = item["Acquisition Date"] || '';
+      document.getElementById('st-date').value = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('st-accountable').value = item["Accountable"] || '';
-      document.getElementById('st-invdate').value = '1-Sep-26';
+      document.getElementById('st-invdate').value = new Date().toISOString().split('T')[0];
       document.getElementById('st-valdate').value = '';
 
       updateStickerPreview();
@@ -1022,10 +1034,10 @@
       document.getElementById('pv-st-prop').innerText = document.getElementById('st-prop').value;
       document.getElementById('pv-st-serial').innerText = document.getElementById('st-serial').value;
       document.getElementById('pv-st-cost').innerText = document.getElementById('st-cost').value;
-      document.getElementById('pv-st-date').innerText = document.getElementById('st-date').value;
+      document.getElementById('pv-st-date').innerText = formatDateOnly(document.getElementById('st-date').value);
       document.getElementById('pv-st-accountable').innerText = document.getElementById('st-accountable').value;
-      document.getElementById('pv-st-invdate').innerText = document.getElementById('st-invdate').value;
-      document.getElementById('pv-st-valdate').innerText = document.getElementById('st-valdate').value;
+      document.getElementById('pv-st-invdate').innerText = formatDateOnly(document.getElementById('st-invdate').value);
+      document.getElementById('pv-st-valdate').innerText = formatDateOnly(document.getElementById('st-valdate').value);
       document.getElementById('pv-st-officer').innerText = document.getElementById('st-officer').value;
     }
 
@@ -1066,9 +1078,9 @@
       document.getElementById('pv-par-serial').innerText = item["Serial No."] || 'N/A';
       document.getElementById('pv-par-remarks').innerText = item["Remarks"] || item["Status"] || 'Active Asset';
       document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
-      document.getElementById('pv-par-acqdate').innerText = item["Acquisition Date"] || '';
-      document.getElementById('pv-par-rec-date').innerText = item["Acquisition Date"] || '';
-      document.getElementById('pv-par-iss-date').innerText = item["Acquisition Date"] || '';
+      document.getElementById('pv-par-acqdate').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-par-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-par-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
       updateParPreview();
