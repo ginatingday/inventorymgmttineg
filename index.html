@@ -67,11 +67,11 @@
         <div class="flex items-center gap-2 flex-wrap">
           <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search description, prop #..." class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs w-56 text-slate-200 focus:outline-none focus:border-emerald-500/50">
           
+          <!-- Category Filter Updated -->
           <select id="filterCategory" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
             <option value="">All Categories</option>
-            <option value="ICT Equipment">ICT Equipment</option>
-            <option value="Motor Vehicles">Motor Vehicles</option>
-            <option value="Office Equipment">Office Equipment</option>
+            <option value="Capitalized Asset">Capitalized Asset (₱50k & Above)</option>
+            <option value="Semi-Expendable Asset">Semi-Expendable Asset (Below ₱50k)</option>
           </select>
 
           <select id="filterSheets" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
@@ -91,16 +91,16 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <button onclick="fetchAssetData()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📥 Import Excel</button>
+          <button onclick="fetchAssetData()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📥 Refresh Data</button>
           <button onclick="exportToExcel()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📄 Export Excel</button>
           <button onclick="window.print()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📄 Export PDF</button>
           <button onclick="openAddModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-1.5 rounded transition-all flex items-center gap-1">
-            <span>+</span> Add Capital Asset
+            <span>+</span> Add Asset
           </button>
         </div>
       </div>
 
-      <!-- Main Ledger Table (Mapped to exact Sheet columns) -->
+      <!-- Main Ledger Table -->
       <div class="bg-[#0b0f19] border border-slate-800/80 rounded-lg overflow-x-auto shadow-2xl">
         <table class="w-full text-left text-[11px] whitespace-nowrap">
           <thead class="bg-[#0f1523] text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
@@ -136,7 +136,7 @@
   <!-- ADD ASSET MODAL -->
   <div id="addModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-lg p-5">
-      <h3 class="text-emerald-400 font-bold text-sm mb-4">➕ ADD CAPITAL ASSET</h3>
+      <h3 class="text-emerald-400 font-bold text-sm mb-4">➕ ADD NEW ASSET</h3>
       <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-2.5 text-xs">
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -155,7 +155,10 @@
           </div>
           <div>
             <label class="text-slate-400 text-[10px]">Category</label>
-            <input type="text" id="add-category" placeholder="ICT Equipment" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <select id="add-category" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+              <option value="Capitalized Asset">Capitalized Asset (₱50k & Above)</option>
+              <option value="Semi-Expendable Asset">Semi-Expendable Asset (Below ₱50k)</option>
+            </select>
           </div>
         </div>
         <div>
@@ -175,7 +178,7 @@
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="text-slate-400 text-[10px]">Cost (PHP)</label>
-            <input type="number" step="0.01" id="add-cost" required placeholder="4900.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <input type="number" step="0.01" id="add-cost" oninput="autoSelectCategoryByCost()" required placeholder="4900.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
             <label class="text-slate-400 text-[10px]">Salvage (PHP)</label>
@@ -349,12 +352,20 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
     let rawAssetData = [];
 
-    // Helper to safely parse numbers with currency symbols or commas
+    // Safe parser for numerical entries
     function parseCurrency(val) {
       if (val === undefined || val === null || val === '') return 0;
       if (typeof val === 'number') return val;
       const cleaned = String(val).replace(/[^0-9.-]+/g, "");
       return parseFloat(cleaned) || 0;
+    }
+
+    // Determine category based on COA 50k threshold rule
+    function getAssetCategory(itemCost, rawCategory) {
+      if (rawCategory && (rawCategory.includes("Capitalized") || rawCategory.includes("Semi-Expendable"))) {
+        return rawCategory;
+      }
+      return itemCost >= 50000 ? "Capitalized Asset" : "Semi-Expendable Asset";
     }
 
     async function fetchAssetData() {
@@ -382,18 +393,18 @@
       }
 
       data.forEach((item, index) => {
-        // Direct Mapping to exact Google Sheet Headers
         const photoUrl = item["Photos"] || '';
         const propNo = item["Property No."] || 'N/A';
         const serialNo = item["Serial No."] || 'N/A';
         const date = item["Acquisition Date"] || 'N/A';
         const desc = item["Asset Description"] || 'N/A';
         const accountable = item["Accountable"] || 'N/A';
-        const category = item["Category"] || 'N/A';
         const office = item["Office"] || 'MAGO';
         const fund = item["Fund"] || 'GF-PPEs';
         
         const cost = parseCurrency(item["Cost (PHP)"]);
+        const category = getAssetCategory(cost, item["Category"]);
+        
         const salvage = parseCurrency(item["Salvage (PHP)"]) || (cost * 0.05);
         const life = item["Useful Life"] || '5 yrs';
         const bookVal = parseCurrency(item["Book Value (PHP)"]) || salvage;
@@ -405,6 +416,10 @@
         const statusBadge = isDepreciated 
           ? `<span class="bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Fully Depreciated</span>`
           : `<span class="bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Active Asset</span>`;
+
+        const categoryBadge = category === "Capitalized Asset"
+          ? `<span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Capitalized (≥50k)</span>`
+          : `<span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Semi-Expendable (<50k)</span>`;
 
         const photoCell = photoUrl 
           ? `<a href="${photoUrl}" target="_blank"><img src="${photoUrl}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" /></a>`
@@ -419,7 +434,7 @@
           <td class="py-2.5 px-2 text-slate-300">${date}</td>
           <td class="py-2.5 px-3 font-semibold text-white max-w-xs truncate">${desc}</td>
           <td class="py-2.5 px-2 text-slate-300">${accountable}</td>
-          <td class="py-2.5 px-2 text-slate-400">${category}</td>
+          <td class="py-2.5 px-2">${categoryBadge}</td>
           <td class="py-2.5 px-2"><span class="bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded text-[10px] font-bold">${office}</span></td>
           <td class="py-2.5 px-2"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]">${fund}</span></td>
           <td class="py-2.5 px-2 text-right font-mono text-slate-200">₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -448,6 +463,12 @@
 
       document.getElementById('stat-total-cost').innerText = `₱${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    function autoSelectCategoryByCost() {
+      const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
+      const catSelect = document.getElementById('add-category');
+      catSelect.value = costVal >= 50000 ? "Capitalized Asset" : "Semi-Expendable Asset";
     }
 
     async function submitNewAsset(e) {
@@ -494,19 +515,20 @@
 
     function filterTable() {
       const q = document.getElementById('searchInput').value.toLowerCase();
-      const cat = document.getElementById('filterCategory').value.toLowerCase();
+      const cat = document.getElementById('filterCategory').value;
       const fund = document.getElementById('filterSheets').value.toLowerCase();
       const office = document.getElementById('filterOffice').value.toLowerCase();
 
       const filtered = rawAssetData.filter(item => {
         const desc = String(item["Asset Description"] || '').toLowerCase();
         const prop = String(item["Property No."] || '').toLowerCase();
-        const itemCat = String(item["Category"] || '').toLowerCase();
+        const cost = parseCurrency(item["Cost (PHP)"]);
+        const itemCat = getAssetCategory(cost, item["Category"]);
         const itemFund = String(item["Fund"] || '').toLowerCase();
         const itemOffice = String(item["Office"] || '').toLowerCase();
 
         const matchesQuery = desc.includes(q) || prop.includes(q);
-        const matchesCat = !cat || itemCat.includes(cat);
+        const matchesCat = !cat || itemCat === cat;
         const matchesFund = !fund || itemFund.includes(fund);
         const matchesOffice = !office || itemOffice.includes(office);
 
@@ -532,7 +554,7 @@
 
       document.getElementById('st-desc').value = item["Asset Description"] || '';
       document.getElementById('st-prop').value = item["Property No."] || '';
-      document.getElementById('st-serial').value = item["Serial No."] || '13250513129';
+      document.getElementById('st-serial').value = item["Serial No."] || 'N/A';
       document.getElementById('st-cost').value = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       document.getElementById('st-date').value = item["Acquisition Date"] || '';
       document.getElementById('st-accountable').value = item["Accountable"] || '';
@@ -581,7 +603,7 @@
     }
 
     function exportToExcel() {
-      alert("Exporting table data to CSV/Excel...");
+      alert("Exporting table data...");
     }
 
     fetchAssetData();
