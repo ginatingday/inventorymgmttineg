@@ -70,8 +70,8 @@
           
           <select id="filterCategory" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
             <option value="">All Categories</option>
-            <option value="Capitalized">Capitalized Asset (₱50k & Above)</option>
-            <option value="Semi-Expendable">Semi-Expendable Asset (Below ₱50k)</option>
+            <option value="Capitalized Asset">Capitalized Asset (₱50k & Above)</option>
+            <option value="Semi-Expendable Asset">Semi-Expendable Asset (Below ₱50k)</option>
           </select>
 
           <select id="filterSheets" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
@@ -223,6 +223,34 @@
     </div>
   </div>
 
+  <!-- REMARKS MODAL -->
+  <div id="remarksModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-md p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+        <h3 class="text-amber-400 font-bold text-sm">📝 ASSET REMARKS</h3>
+        <button onclick="closeRemarksModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-slate-400 text-[10px] block mb-1">PROPERTY NUMBER</label>
+          <input type="text" id="rm-prop" readonly class="w-full bg-[#060911] border border-slate-800 p-2 rounded text-amber-400 font-bold cursor-not-allowed">
+        </div>
+        <div>
+          <label class="text-slate-400 text-[10px] block mb-1">ASSET DESCRIPTION</label>
+          <input type="text" id="rm-desc" readonly class="w-full bg-[#060911] border border-slate-800 p-2 rounded text-slate-300 cursor-not-allowed">
+        </div>
+        <div>
+          <label class="text-slate-400 text-[10px] block mb-1">REMARKS / ITEM STATUS</label>
+          <textarea id="rm-text" rows="4" placeholder="Enter condition, maintenance logs, or updates..." class="w-full bg-[#060911] border border-slate-800 p-2 rounded text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+        </div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" onclick="closeRemarksModal()" class="bg-slate-800 text-slate-300 px-3 py-1.5 rounded">Cancel</button>
+        <button type="button" onclick="saveRemarks()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded">💾 Save Remarks</button>
+      </div>
+    </div>
+  </div>
+
   <!-- PROPERTY INVENTORY STICKER MODAL (LOGO ON LEFT) -->
   <div id="stickerModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
@@ -270,7 +298,7 @@
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">DATE ACQUIRED</label>
-              <input type="text" id="st-date" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="date" id="st-date" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
           </div>
 
@@ -281,14 +309,14 @@
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">INVENTORY DATE</label>
-              <input type="text" id="st-invdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="date" id="st-invdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">VALIDATED DATE</label>
-              <input type="text" id="st-valdate" placeholder="e.g. 24-Mar-25" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+              <input type="date" id="st-valdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
             </div>
             <div>
               <label class="text-[10px] text-slate-400 font-semibold block mb-1">PROPERTY OFFICER</label>
@@ -513,346 +541,311 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
     
-    // 20 Mock Data Entries
-    const mock20Assets = [
-      {"Property No.": "XV-001", "Serial No.": "SN-99812", "Acquisition Date": "2023-01-15", "Asset Description": "Desktop Workstation i7", "Accountable": "JUAN DELA CRUZ", "Category": "Capitalized Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 65000, "Salvage (PHP)": 3250, "Useful Life": "5 yrs", "Book Value (PHP)": 3250, "Status": "Fully Depreciated"},
-      {"Property No.": "XV-002", "Serial No.": "SN-44102", "Acquisition Date": "2023-03-20", "Asset Description": "Epson L3210 Printer", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 11500, "Salvage (PHP)": 575, "Useful Life": "3 yrs", "Book Value (PHP)": 575, "Status": "Fully Depreciated"},
-      {"Property No.": "XV-003", "Serial No.": "SN-88123", "Acquisition Date": "2024-02-10", "Asset Description": "Executive Office Desk", "Accountable": "PEDRO PASCUAL", "Category": "Semi-Expendable Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 18500, "Salvage (PHP)": 925, "Useful Life": "5 yrs", "Book Value (PHP)": 11000, "Status": "Active Asset"},
-      {"Property No.": "XV-004", "Serial No.": "SN-10293", "Acquisition Date": "2024-05-12", "Asset Description": "Heavy Duty Paper Shredder", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 8500, "Salvage (PHP)": 425, "Useful Life": "3 yrs", "Book Value (PHP)": 5200, "Status": "Active Asset"},
-      {"Property No.": "XV-005", "Serial No.": "SN-77211", "Acquisition Date": "2024-06-01", "Asset Description": "Heavy Duty Photocopier Bizhub", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 145000, "Salvage (PHP)": 7250, "Useful Life": "5 yrs", "Book Value (PHP)": 110000, "Status": "Active Asset"},
-      {"Property No.": "XV-006", "Serial No.": "SN-33921", "Acquisition Date": "2024-07-15", "Asset Description": "Air Conditioner 2.0 HP Inverter", "Accountable": "CARMELITA TINGDAY", "Category": "Capitalized Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 52000, "Salvage (PHP)": 2600, "Useful Life": "5 yrs", "Book Value (PHP)": 42000, "Status": "Active Asset"},
-      {"Property No.": "XV-007", "Serial No.": "SN-55210", "Acquisition Date": "2024-08-01", "Asset Description": "Conference Table 10-Seater", "Accountable": "HONORIO LALUGAN", "Category": "Semi-Expendable Asset", "Office": "SB", "Fund": "GF-PPEs", "Cost (PHP)": 35000, "Salvage (PHP)": 1750, "Useful Life": "5 yrs", "Book Value (PHP)": 28000, "Status": "Active Asset"},
-      {"Property No.": "XV-008", "Serial No.": "SN-00291", "Acquisition Date": "2024-09-10", "Asset Description": "LCD Projector 4K", "Accountable": "GRETCHEN TINGDAY", "Category": "Capitalized Asset", "Office": "MPDO", "Fund": "20% DF", "Cost (PHP)": 58000, "Salvage (PHP)": 2900, "Useful Life": "5 yrs", "Book Value (PHP)": 49000, "Status": "Active Asset"},
-      {"Property No.": "XV-009", "Serial No.": "SN-11029", "Acquisition Date": "2024-10-05", "Asset Description": "Motorcycle 150cc Utility", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "GF-PPEs", "Cost (PHP)": 98000, "Salvage (PHP)": 4900, "Useful Life": "7 yrs", "Book Value (PHP)": 85000, "Status": "Active Asset"},
-      {"Property No.": "XV-010", "Serial No.": "SN-44912", "Acquisition Date": "2024-11-12", "Asset Description": "Ergonomic Mesh Chairs (Set of 5)", "Accountable": "QUEZADA SHERYLL", "Category": "Semi-Expendable Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 22500, "Salvage (PHP)": 1125, "Useful Life": "3 yrs", "Book Value (PHP)": 18000, "Status": "Active Asset"},
-      {"Property No.": "XV-011", "Serial No.": "SN-88201", "Acquisition Date": "2025-01-10", "Asset Description": "Starlink Satellite Internet Kit", "Accountable": "GINA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 28000, "Salvage (PHP)": 1400, "Useful Life": "3 yrs", "Book Value (PHP)": 24000, "Status": "Active Asset"},
-      {"Property No.": "XV-012", "Serial No.": "SN-33019", "Acquisition Date": "2025-02-14", "Asset Description": "UPS 1500VA Backup Power", "Accountable": "RAQUEL THOMPSON", "Category": "Semi-Expendable Asset", "Office": "ACCOUNTING", "Fund": "GF-PPEs", "Cost (PHP)": 9500, "Salvage (PHP)": 475, "Useful Life": "3 yrs", "Book Value (PHP)": 8500, "Status": "Active Asset"},
-      {"Property No.": "XV-013", "Serial No.": "SN-99102", "Acquisition Date": "2025-03-01", "Asset Description": "4Kw Gasoline Generator Unit", "Accountable": "KRIZA TINGDAY", "Category": "Capitalized Asset", "Office": "MDRRMO", "Fund": "5% LDRRM", "Cost (PHP)": 75000, "Salvage (PHP)": 3750, "Useful Life": "5 yrs", "Book Value (PHP)": 68000, "Status": "Active Asset"},
-      {"Property No.": "XV-014", "Serial No.": "SN-66512", "Acquisition Date": "2025-03-15", "Asset Description": "DSLR Camera System for Info", "Accountable": "KIMBERLYN QUEZADA", "Category": "Capitalized Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 62000, "Salvage (PHP)": 3100, "Useful Life": "5 yrs", "Book Value (PHP)": 58000, "Status": "Active Asset"},
-      {"Property No.": "XV-015", "Serial No.": "SN-12903", "Acquisition Date": "2025-04-02", "Asset Description": "Filing Cabinet 4-Drawer Steel", "Accountable": "JUAN DELA CRUZ", "Category": "Semi-Expendable Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 12000, "Salvage (PHP)": 600, "Useful Life": "5 yrs", "Book Value (PHP)": 11000, "Status": "Active Asset"},
-      {"Property No.": "XV-016", "Serial No.": "SN-77192", "Acquisition Date": "2025-05-10", "Asset Description": "Water Dispenser Hot/Cold", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 7800, "Salvage (PHP)": 390, "Useful Life": "3 yrs", "Book Value (PHP)": 7200, "Status": "Active Asset"},
-      {"Property No.": "XV-017", "Serial No.": "SN-88231", "Acquisition Date": "2025-06-01", "Asset Description": "Public Address System Speakers", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 89000, "Salvage (PHP)": 4450, "Useful Life": "5 yrs", "Book Value (PHP)": 84000, "Status": "Active Asset"},
-      {"Property No.": "XV-018", "Serial No.": "SN-33102", "Acquisition Date": "2025-06-20", "Asset Description": "Biometric Attendance Scanner", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 15500, "Salvage (PHP)": 775, "Useful Life": "3 yrs", "Book Value (PHP)": 14500, "Status": "Active Asset"},
-      {"Property No.": "XV-019", "Serial No.": "SN-00129", "Acquisition Date": "2025-07-05", "Asset Description": "Digital Vault Heavy Duty", "Accountable": "QUEZADA SHERYLL", "Category": "Capitalized Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 54000, "Salvage (PHP)": 2700, "Useful Life": "10 yrs", "Book Value (PHP)": 52000, "Status": "Active Asset"},
-      {"Property No.": "XV-020", "Serial No.": "SN-44192", "Acquisition Date": "2025-08-12", "Asset Description": "Drone Unit for Agricultural Mapping", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "20% DF", "Cost (PHP)": 125000, "Salvage (PHP)": 6250, "Useful Life": "5 yrs", "Book Value (PHP)": 120000, "Status": "Active Asset"}
+    // Initial 20 Mock Data Entries with Date-Only Formats
+    let rawAssets = [
+      { propertyNo: "XV-001", serialNo: "SN-99812", acquisitionDate: "2024-01-15", assetDescription: "Workstation Desktop Computer", accountable: "Juan Dela Cruz", category: "Capitalized Asset", office: "MBO", fund: "GF-PPEs", cost: 65000, salvage: 3250, usefulLife: "5 yrs", bookValue: 52000, status: "Active Asset", remarks: "Good condition", photo: "" },
+      { propertyNo: "XV-002", serialNo: "SN-44312", acquisitionDate: "2023-05-10", assetDescription: "Heavy Duty Printer & Scanner", accountable: "Maria Santos", category: "Semi-Expendable Asset", office: "MBO", fund: "GF-PPEs", cost: 35000, salvage: 1750, usefulLife: "3 yrs", bookValue: 12000, status: "Active Asset", remarks: "Cartridge refilled", photo: "" },
+      { propertyNo: "XV-003", serialNo: "SN-88123", acquisitionDate: "2022-11-20", assetDescription: "Executive Office Desk & Chair", accountable: "Pedro Penduko", category: "Semi-Expendable Asset", office: "MO", fund: "GF-PPEs", cost: 28000, salvage: 1400, usefulLife: "3 yrs", bookValue: 0, status: "Fully Depreciated", remarks: "Minor scratches", photo: "" },
+      { propertyNo: "XV-004", serialNo: "SN-10293", acquisitionDate: "2025-02-01", assetDescription: "LGU Admin Laptop", accountable: "Gina Tingday", category: "Capitalized Asset", office: "MBO", fund: "GF-PPEs", cost: 78000, salvage: 3900, usefulLife: "5 yrs", bookValue: 74100, status: "Active Asset", remarks: "Newly assigned", photo: "" },
+      { propertyNo: "XV-005", serialNo: "SN-55412", acquisitionDate: "2021-08-14", assetDescription: "Projector System", accountable: "Ana Reyes", category: "Semi-Expendable Asset", office: "SB", fund: "SEF", cost: 42000, salvage: 2100, usefulLife: "3 yrs", bookValue: 0, status: "Fully Depreciated", remarks: "Bulb replaced", photo: "" },
+      { propertyNo: "XV-006", serialNo: "SN-77231", acquisitionDate: "2024-06-12", assetDescription: "Conference Room Aircon 2HP", accountable: "Roby Tinong", category: "Capitalized Asset", office: "MO", fund: "GF-PPEs", cost: 55000, salvage: 2750, usefulLife: "5 yrs", bookValue: 48000, status: "Active Asset", remarks: "Monthly maintenance ok", photo: "" },
+      { propertyNo: "XV-007", serialNo: "SN-33910", acquisitionDate: "2023-09-01", assetDescription: "Uninterruptible Power Supply (UPS)", accountable: "Mark Lopez", category: "Semi-Expendable Asset", office: "MPDO", fund: "GF-PPEs", cost: 18000, salvage: 900, usefulLife: "2 yrs", bookValue: 4500, status: "Active Asset", remarks: "Battery healthy", photo: "" },
+      { propertyNo: "XV-008", serialNo: "SN-00291", acquisitionDate: "2024-11-05", assetDescription: "Heavy Duty Paper Shredder", accountable: "Elena Torres", category: "Semi-Expendable Asset", office: "HRMO", fund: "GF-PPEs", cost: 22000, salvage: 1100, usefulLife: "3 yrs", bookValue: 19500, status: "Active Asset", remarks: "Fully functional", photo: "" },
+      { propertyNo: "XV-009", serialNo: "SN-88201", acquisitionDate: "2022-03-30", assetDescription: "Digital Camera for Field Surveys", accountable: "Carlos Cruz", category: "Capitalized Asset", office: "MAO", fund: "Trust Fund", cost: 85000, salvage: 4250, usefulLife: "5 yrs", bookValue: 38000, status: "Active Asset", remarks: "Lens inspected", photo: "" },
+      { propertyNo: "XV-010", serialNo: "SN-11029", acquisitionDate: "2025-01-10", assetDescription: "GIS Mapping Tablet", accountable: "Grace Poe", category: "Semi-Expendable Asset", office: "MPDO", fund: "Trust Fund", cost: 48000, salvage: 2400, usefulLife: "3 yrs", bookValue: 46000, status: "Active Asset", remarks: "GPS active", photo: "" },
+      { propertyNo: "XV-011", serialNo: "SN-99201", acquisitionDate: "2024-03-18", assetDescription: "Motorcycle for Field Inspection", accountable: "Jose Rizal", category: "Capitalized Asset", office: "MEO", fund: "GF-PPEs", cost: 120000, salvage: 6000, usefulLife: "7 yrs", bookValue: 105000, status: "Active Asset", remarks: "Registered 2026", photo: "" },
+      { propertyNo: "XV-012", serialNo: "SN-33812", acquisitionDate: "2023-12-01", assetDescription: "Filing Cabinet (4-Drawer)", accountable: "Luz Garcia", category: "Semi-Expendable Asset", office: "MBO", fund: "GF-PPEs", cost: 15000, salvage: 750, usefulLife: "5 yrs", bookValue: 11500, status: "Active Asset", remarks: "Locked and operational", photo: "" },
+      { propertyNo: "XV-013", serialNo: "SN-44910", acquisitionDate: "2021-04-22", assetDescription: "Water Dispenser", accountable: "Mario Brothers", category: "Semi-Expendable Asset", office: "MHO", fund: "GF-PPEs", cost: 12000, salvage: 600, usefulLife: "3 yrs", bookValue: 0, status: "Fully Depreciated", remarks: "Cleaned bi-weekly", photo: "" },
+      { propertyNo: "XV-014", serialNo: "SN-77123", acquisitionDate: "2024-08-19", assetDescription: "Public Address (PA) Sound System", accountable: "Kriza Tingday", category: "Capitalized Asset", office: "MO", fund: "GF-PPEs", cost: 95000, salvage: 4750, usefulLife: "5 yrs", bookValue: 83000, status: "Active Asset", remarks: "Used for municipal hall events", photo: "" },
+      { propertyNo: "XV-015", serialNo: "SN-55012", acquisitionDate: "2023-02-14", assetDescription: "Biometric Time Attendance Terminal", accountable: "HRMO Head", category: "Semi-Expendable Asset", office: "HRMO", fund: "GF-PPEs", cost: 32000, salvage: 1600, usefulLife: "3 yrs", bookValue: 11000, status: "Active Asset", remarks: "Synced with HRIS", photo: "" },
+      { propertyNo: "XV-016", serialNo: "SN-66102", acquisitionDate: "2025-02-20", assetDescription: "Starlink Satellite Internet Kit", accountable: "MBO Head", category: "Capitalized Asset", office: "MBO", fund: "GF-PPEs", cost: 50000, salvage: 2500, usefulLife: "5 yrs", bookValue: 49000, status: "Active Asset", remarks: "Installed at Budget Office", photo: "" },
+      { propertyNo: "XV-017", serialNo: "SN-22810", acquisitionDate: "2022-07-11", assetDescription: "Hydraulic Jack & Tool Set", accountable: "General Services", category: "Semi-Expendable Asset", office: "GSO", fund: "GF-PPEs", cost: 25000, salvage: 1250, usefulLife: "5 yrs", bookValue: 8000, status: "Active Asset", remarks: "Complete set", photo: "" },
+      { propertyNo: "XV-018", serialNo: "SN-11928", acquisitionDate: "2024-10-01", assetDescription: "Network Router & Switch 24-Port", accountable: "IT Unit", category: "Capitalized Asset", office: "MO", fund: "GF-PPEs", cost: 62000, salvage: 3100, usefulLife: "5 yrs", bookValue: 56000, status: "Active Asset", remarks: "Server room rack", photo: "" },
+      { propertyNo: "XV-019", serialNo: "SN-44102", acquisitionDate: "2023-01-05", assetDescription: "Emergency Rescue Chainsaw", accountable: "MDRRMO Head", category: "Semi-Expendable Asset", office: "MDRRMO", fund: "Trust Fund", cost: 45000, salvage: 2250, usefulLife: "3 yrs", bookValue: 15000, status: "Active Asset", remarks: "Engine tested", photo: "" },
+      { propertyNo: "XV-020", serialNo: "SN-99102", acquisitionDate: "2024-04-30", assetDescription: "Solar Panel Backup Power Unit", accountable: "MDRRMO Head", category: "Capitalized Asset", office: "MDRRMO", fund: "Trust Fund", cost: 110000, salvage: 5500, usefulLife: "5 yrs", bookValue: 95000, status: "Active Asset", remarks: "Operational", photo: "" }
     ];
 
-    let rawAssetData = [];
-    let filteredAssetData = [];
-    
-    // Pagination Variables
+    let filteredAssets = [...rawAssets];
     let currentPage = 1;
     let rowsPerPage = 10;
+    let uploadedLogoBase64 = "";
 
-    function parseCurrency(val) {
-      if (val === undefined || val === null || val === '') return 0;
-      if (typeof val === 'number') return val;
-      const cleaned = String(val).replace(/[^0-9.-]+/g, "");
-      return parseFloat(cleaned) || 0;
+    // DOM Loaded Initialization
+    document.addEventListener("DOMContentLoaded", () => {
+      populateDropdownFilters();
+      renderTable();
+      updateSummaryCards();
+    });
+
+    // Populate Dynamic Filters
+    function populateDropdownFilters() {
+      const fundSelect = document.getElementById("filterSheets");
+      const officeSelect = document.getElementById("filterOffice");
+
+      const funds = [...new Set(rawAssets.map(item => item.fund).filter(Boolean))];
+      const offices = [...new Set(rawAssets.map(item => item.office).filter(Boolean))];
+
+      fundSelect.innerHTML = `<option value="">All Funds</option>` + funds.map(f => `<option value="${f}">${f}</option>`).join("");
+      officeSelect.innerHTML = `<option value="">All Offices</option>` + offices.map(o => `<option value="${o}">${o}</option>`).join("");
     }
 
-    function isCapitalized(cost, rawCategory) {
-      if (rawCategory && String(rawCategory).toLowerCase().includes("capitalized")) return true;
-      if (rawCategory && String(rawCategory).toLowerCase().includes("semi")) return false;
-      return cost >= 50000;
-    }
+    // Filter Table Data
+    function filterTable() {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const category = document.getElementById("filterCategory").value;
+      const fund = document.getElementById("filterSheets").value;
+      const office = document.getElementById("filterOffice").value;
 
-    async function fetchAssetData() {
-      try {
-        const response = await fetch(API_URL);
-        const liveData = await response.json();
-        rawAssetData = liveData && liveData.length > 0 ? liveData : mock20Assets;
-      } catch (error) {
-        console.log("Using default 20 entries dataset.");
-        rawAssetData = mock20Assets;
-      }
-      
-      populateDynamicDropdowns(rawAssetData);
-      filterTable();
-    }
-
-    function populateDynamicDropdowns(data) {
-      const officeSelect = document.getElementById('filterOffice');
-      const fundSelect = document.getElementById('filterSheets');
-
-      const offices = [...new Set(data.map(item => item["Office"]).filter(Boolean))].sort();
-      const funds = [...new Set(data.map(item => item["Fund"]).filter(Boolean))].sort();
-
-      officeSelect.innerHTML = `<option value="">All Offices</option>`;
-      offices.forEach(office => {
-        const opt = document.createElement('option');
-        opt.value = office;
-        opt.textContent = office;
-        officeSelect.appendChild(opt);
+      filteredAssets = rawAssets.filter(item => {
+        const matchesSearch = item.assetDescription.toLowerCase().includes(search) || item.propertyNo.toLowerCase().includes(search) || (item.serialNo && item.serialNo.toLowerCase().includes(search));
+        const matchesCategory = category === "" || item.category === category;
+        const matchesFund = fund === "" || item.fund === fund;
+        const matchesOffice = office === "" || item.office === office;
+        return matchesSearch && matchesCategory && matchesFund && matchesOffice;
       });
 
-      fundSelect.innerHTML = `<option value="">All Funds</option>`;
-      funds.forEach(fund => {
-        const opt = document.createElement('option');
-        opt.value = fund;
-        opt.textContent = fund;
-        fundSelect.appendChild(opt);
-      });
+      currentPage = 1;
+      renderTable();
+      updateSummaryCards();
     }
 
+    // Render Table with Pagination
     function renderTable() {
-      const tbody = document.getElementById('asset-table-body');
-      tbody.innerHTML = '';
+      const tbody = document.getElementById("asset-table-body");
+      tbody.innerHTML = "";
 
-      if (!filteredAssetData || filteredAssetData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="15" class="py-8 text-center text-slate-500">No matching assets found.</td></tr>`;
-        updatePaginationInfo(0);
+      if (filteredAssets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="15" class="py-8 text-center text-slate-500">No matching asset records found.</td></tr>`;
+        updatePaginationControls(0);
         return;
       }
 
-      // Calculate Pagination Slice
+      const totalEntries = filteredAssets.length;
       const startIndex = (currentPage - 1) * rowsPerPage;
-      const endIndex = Math.min(startIndex + rowsPerPage, filteredAssetData.length);
-      const paginatedData = filteredAssetData.slice(startIndex, endIndex);
+      const endIndex = Math.min(startIndex + rowsPerPage, totalEntries);
+      const pageItems = filteredAssets.slice(startIndex, endIndex);
 
-      paginatedData.forEach((item, pageIdx) => {
-        const globalIdx = startIndex + pageIdx;
-        const photoUrl = item["Photos"] || '';
-        const propNo = item["Property No."] || 'N/A';
-        const serialNo = item["Serial No."] || 'N/A';
-        const date = item["Acquisition Date"] || 'N/A';
-        const desc = item["Asset Description"] || 'N/A';
-        const accountable = item["Accountable"] || 'N/A';
-        const office = item["Office"] || 'N/A';
-        const fund = item["Fund"] || 'N/A';
-        
-        const cost = parseCurrency(item["Cost (PHP)"]);
-        const capitalized = isCapitalized(cost, item["Category"]);
-        
-        const salvage = parseCurrency(item["Salvage (PHP)"]) || (cost * 0.05);
-        const life = item["Useful Life"] || '5 yrs';
-        const bookVal = parseCurrency(item["Book Value (PHP)"]) || salvage;
-        
-        const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
+      pageItems.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-800/30 transition-colors";
 
-        const isDepreciated = String(status).toLowerCase().includes('fully');
-        const statusBadge = isDepreciated 
-          ? `<span class="bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Fully Depreciated</span>`
-          : `<span class="bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Active Asset</span>`;
+        const formattedCost = Number(item.cost).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formattedSalvage = Number(item.salvage || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formattedBook = Number(item.bookValue || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        const categoryBadge = capitalized
-          ? `<span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Capitalized (≥50k)</span>`
-          : `<span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Semi-Expendable (<50k)</span>`;
-
-        const photoCell = photoUrl 
-          ? `<a href="${photoUrl}" target="_blank"><img src="${photoUrl}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" /></a>`
-          : `<button class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto">📷 + Photo</button>`;
-
-        const row = document.createElement('tr');
-        row.className = "hover:bg-slate-800/30 transition-colors border-b border-slate-800/40";
-        row.innerHTML = `
-          <td class="py-2.5 px-2 text-center">${photoCell}</td>
-          <td class="py-2.5 px-2 font-mono font-bold text-amber-400">${propNo}</td>
-          <td class="py-2.5 px-2 font-mono text-slate-300">${serialNo}</td>
-          <td class="py-2.5 px-2 text-slate-300">${date}</td>
-          <td class="py-2.5 px-3 font-semibold text-white max-w-xs truncate">${desc}</td>
-          <td class="py-2.5 px-2 text-slate-300">${accountable}</td>
-          <td class="py-2.5 px-2">${categoryBadge}</td>
-          <td class="py-2.5 px-2"><span class="bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded text-[10px] font-bold">${office}</span></td>
-          <td class="py-2.5 px-2"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]">${fund}</span></td>
-          <td class="py-2.5 px-2 text-right font-mono text-slate-200">₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-          <td class="py-2.5 px-2 text-right font-mono text-slate-400">₱${salvage.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-          <td class="py-2.5 px-2 text-center text-emerald-400 font-medium">${life}</td>
-          <td class="py-2.5 px-2 text-right font-mono text-cyan-400 font-bold">₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-          <td class="py-2.5 px-2 text-center">${statusBadge}</td>
+        tr.innerHTML = `
+          <td class="py-2.5 px-2 text-center">📷</td>
+          <td class="py-2.5 px-2 font-bold text-amber-400 font-mono">${item.propertyNo}</td>
+          <td class="py-2.5 px-2 text-slate-400 font-mono">${item.serialNo || 'N/A'}</td>
+          <td class="py-2.5 px-2 text-slate-300">${formatDateOnly(item.acquisitionDate)}</td>
+          <td class="py-2.5 px-3 font-semibold text-white max-w-xs truncate">${item.assetDescription}</td>
+          <td class="py-2.5 px-2 text-slate-300 uppercase">${item.accountable || 'N/A'}</td>
+          <td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded text-[10px] ${item.category.includes('Capitalized') ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-300'}">${item.category}</span></td>
+          <td class="py-2.5 px-2 text-slate-300">${item.office || '-'}</td>
+          <td class="py-2.5 px-2 text-slate-400">${item.fund || '-'}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-slate-200">₱${formattedCost}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-slate-400">₱${formattedSalvage}</td>
+          <td class="py-2.5 px-2 text-center text-slate-400">${item.usefulLife || '-'}</td>
+          <td class="py-2.5 px-2 text-right font-mono font-bold text-cyan-400">₱${formattedBook}</td>
+          <td class="py-2.5 px-2 text-center"><span class="px-2 py-0.5 rounded text-[10px] ${item.status === 'Active Asset' ? 'bg-cyan-950 text-cyan-400 border border-cyan-800' : 'bg-rose-950 text-rose-400 border border-rose-800'}">${item.status}</span></td>
           <td class="py-2.5 px-3 text-center">
-            <div class="flex items-center justify-center gap-1">
-              <button onclick="openParModal(${globalIdx})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]">📄 PAR Form</button>
-              <button onclick="openStickerModal(${globalIdx})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded text-[10px]">🏷️ Sticker</button>
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="openStickerModal('${item.propertyNo}')" title="Print Sticker" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-700/60 px-2 py-1 rounded font-medium text-[10px]">🏷️ Sticker</button>
+              <button onclick="openParModal('${item.propertyNo}')" title="Print PAR Form" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-400 border border-cyan-700/60 px-2 py-1 rounded font-medium text-[10px]">📄 PAR</button>
+              <button onclick="openRemarksModal('${item.propertyNo}')" title="Add or Edit Remarks" class="bg-amber-950 hover:bg-amber-900 text-amber-400 border border-amber-700/60 px-2 py-1 rounded font-medium text-[10px]">📝 Remarks</button>
             </div>
           </td>
         `;
-        tbody.appendChild(row);
+        tbody.appendChild(tr);
       });
 
-      updatePaginationInfo(filteredAssetData.length);
+      updatePaginationControls(totalEntries);
     }
 
-    function updatePaginationInfo(totalItems) {
-      const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
-      const start = totalItems === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
-      const end = Math.min(currentPage * rowsPerPage, totalItems);
+    // Date-Only Formatter Enforcer
+    function formatDateOnly(dateStr) {
+      if (!dateStr) return "--";
+      // Strips time component if present
+      const cleanDate = dateStr.toString().split("T")[0];
+      return cleanDate;
+    }
 
-      document.getElementById('page-start').innerText = start;
-      document.getElementById('page-end').innerText = end;
-      document.getElementById('page-total').innerText = totalItems;
+    // Update Top Summary Cards
+    function updateSummaryCards() {
+      const totalItems = filteredAssets.length;
+      const totalCost = filteredAssets.reduce((sum, item) => sum + Number(item.cost || 0), 0);
+      const totalBookValue = filteredAssets.reduce((sum, item) => sum + Number(item.bookValue || 0), 0);
 
-      document.getElementById('btnPrev').disabled = currentPage === 1;
-      document.getElementById('btnNext').disabled = currentPage === totalPages || totalPages === 0;
+      document.getElementById("stat-total-items").innerText = `${totalItems} Items`;
+      document.getElementById("stat-total-cost").innerText = `₱${totalCost.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+      document.getElementById("stat-book-value").innerText = `₱${totalBookValue.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+    }
 
-      // Render Numbered Page Buttons
-      const pageNumbersContainer = document.getElementById('pageNumbers');
-      pageNumbersContainer.innerHTML = '';
-      
+    // Pagination Logic
+    function updatePaginationControls(totalEntries) {
+      const totalPages = Math.ceil(totalEntries / rowsPerPage) || 1;
+      const startIndex = totalEntries === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+      const endIndex = Math.min(currentPage * rowsPerPage, totalEntries);
+
+      document.getElementById("page-start").innerText = startIndex;
+      document.getElementById("page-end").innerText = endIndex;
+      document.getElementById("page-total").innerText = totalEntries;
+
+      document.getElementById("btnPrev").disabled = currentPage === 1;
+      document.getElementById("btnNext").disabled = currentPage >= totalPages;
+
+      const pageContainer = document.getElementById("pageNumbers");
+      pageContainer.innerHTML = "";
       for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement('button');
+        const btn = document.createElement("button");
+        btn.className = `px-2.5 py-1 rounded text-xs font-bold ${i === currentPage ? 'bg-emerald-500 text-slate-950' : 'bg-[#060911] text-slate-400 hover:bg-slate-800'}`;
         btn.innerText = i;
-        btn.onclick = () => goToPage(i);
-        btn.className = `px-2.5 py-1 rounded text-xs font-medium ${
-          i === currentPage 
-            ? 'bg-emerald-500 text-slate-950 font-bold' 
-            : 'bg-[#060911] border border-slate-800 text-slate-300 hover:bg-slate-800'
-        }`;
-        pageNumbersContainer.appendChild(btn);
+        btn.onclick = () => { currentPage = i; renderTable(); };
+        pageContainer.appendChild(btn);
       }
-    }
-
-    function prevPage() {
-      if (currentPage > 1) {
-        currentPage--;
-        renderTable();
-      }
-    }
-
-    function nextPage() {
-      const totalPages = Math.ceil(filteredAssetData.length / rowsPerPage);
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderTable();
-      }
-    }
-
-    function goToPage(page) {
-      currentPage = page;
-      renderTable();
     }
 
     function changeRowsPerPage() {
-      rowsPerPage = parseInt(document.getElementById('rowsPerPage').value);
+      rowsPerPage = parseInt(document.getElementById("rowsPerPage").value);
       currentPage = 1;
       renderTable();
     }
 
-    function calculateMetrics(data) {
-      document.getElementById('stat-total-items').innerText = `${data.length} Items`;
-      const totalCost = data.reduce((acc, curr) => acc + parseCurrency(curr["Cost (PHP)"]), 0);
-      const totalBook = data.reduce((acc, curr) => acc + parseCurrency(curr["Book Value (PHP)"]), 0);
-
-      document.getElementById('stat-total-cost').innerText = `₱${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-      document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    function prevPage() {
+      if (currentPage > 1) { currentPage--; renderTable(); }
     }
 
-    function autoSelectCategoryByCost() {
-      const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
-      const catSelect = document.getElementById('add-category');
-      catSelect.value = costVal >= 50000 ? "Capitalized Asset" : "Semi-Expendable Asset";
+    function nextPage() {
+      const totalPages = Math.ceil(filteredAssets.length / rowsPerPage);
+      if (currentPage < totalPages) { currentPage++; renderTable(); }
     }
 
-    async function submitNewAsset(e) {
-      e.preventDefault();
-      const submitBtn = document.getElementById('submitBtn');
-      submitBtn.innerText = "Saving...";
-      submitBtn.disabled = true;
-
-      const newObj = {
-        "Property No.": document.getElementById('add-prop').value,
-        "Serial No.": document.getElementById('add-serial').value,
-        "Acquisition Date": document.getElementById('add-date').value,
-        "Asset Description": document.getElementById('add-desc').value,
-        "Accountable": document.getElementById('add-accountable').value,
-        "Category": document.getElementById('add-category').value,
-        "Office": document.getElementById('add-office').value,
-        "Fund": document.getElementById('add-fund').value,
-        "Cost (PHP)": parseFloat(document.getElementById('add-cost').value),
-        "Salvage (PHP)": parseFloat(document.getElementById('add-salvage').value),
-        "Useful Life": document.getElementById('add-life').value,
-        "Book Value (PHP)": parseFloat(document.getElementById('add-salvage').value),
-        "Status": document.getElementById('add-status').value
-      };
-
-      rawAssetData.unshift(newObj);
-      filterTable();
-
-      try {
-        await fetch(API_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newObj)
-        });
-      } catch (err) {
-        console.error("Error saving:", err);
-      } finally {
-        submitBtn.innerText = "💾 Save to Sheet";
-        submitBtn.disabled = false;
-        document.getElementById('addAssetForm').reset();
-        closeAddModal();
-      }
-    }
-
-    function filterTable() {
-      const q = document.getElementById('searchInput').value.toLowerCase();
-      const catFilter = document.getElementById('filterCategory').value;
-      const fundFilter = document.getElementById('filterSheets').value;
-      const officeFilter = document.getElementById('filterOffice').value;
-
-      filteredAssetData = rawAssetData.filter(item => {
-        const desc = String(item["Asset Description"] || '').toLowerCase();
-        const prop = String(item["Property No."] || '').toLowerCase();
-        const cost = parseCurrency(item["Cost (PHP)"]);
-        const capitalized = isCapitalized(cost, item["Category"]);
-        
-        const matchesQuery = desc.includes(q) || prop.includes(q);
-        
-        let matchesCat = true;
-        if (catFilter === 'Capitalized') matchesCat = capitalized;
-        else if (catFilter === 'Semi-Expendable') matchesCat = !capitalized;
-
-        const matchesFund = !fundFilter || String(item["Fund"] || '') === fundFilter;
-        const matchesOffice = !officeFilter || String(item["Office"] || '') === officeFilter;
-
-        return matchesQuery && matchesCat && matchesFund && matchesOffice;
-      });
-
-      currentPage = 1;
-      renderTable();
-      calculateMetrics(filteredAssetData);
-    }
-
+    // Add Asset Modal Functions
     function openAddModal() {
-      document.getElementById('addModal').classList.remove('hidden');
-      document.getElementById('addModal').classList.add('flex');
+      document.getElementById("addModal").classList.remove("hidden");
+      document.getElementById("addModal").classList.add("flex");
     }
 
     function closeAddModal() {
-      document.getElementById('addModal').classList.add('hidden');
-      document.getElementById('addModal').classList.remove('flex');
+      document.getElementById("addModal").classList.add("hidden");
+      document.getElementById("addModal").classList.remove("flex");
     }
 
-    /* Sticker Modal Logic */
-    function openStickerModal(index) {
-      const item = filteredAssetData[index];
-      const costVal = parseCurrency(item["Cost (PHP)"]);
+    function autoSelectCategoryByCost() {
+      const cost = parseFloat(document.getElementById("add-cost").value) || 0;
+      const categorySelect = document.getElementById("add-category");
+      if (cost >= 50000) {
+        categorySelect.value = "Capitalized Asset";
+      } else {
+        categorySelect.value = "Semi-Expendable Asset";
+      }
+    }
 
-      document.getElementById('st-desc').value = item["Asset Description"] || '';
-      document.getElementById('st-prop').value = item["Property No."] || '';
-      document.getElementById('st-serial').value = item["Serial No."] || 'N/A';
-      document.getElementById('st-cost').value = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-      document.getElementById('st-date').value = item["Acquisition Date"] || '';
-      document.getElementById('st-accountable').value = item["Accountable"] || '';
-      document.getElementById('st-invdate').value = '1-Sep-26';
-      document.getElementById('st-valdate').value = '';
+    function submitNewAsset(e) {
+      e.preventDefault();
+      const costVal = parseFloat(document.getElementById("add-cost").value) || 0;
+      const salvageVal = parseFloat(document.getElementById("add-salvage").value) || (costVal * 0.05);
+
+      const newItem = {
+        propertyNo: document.getElementById("add-prop").value,
+        serialNo: document.getElementById("add-serial").value || "N/A",
+        acquisitionDate: formatDateOnly(document.getElementById("add-date").value),
+        category: document.getElementById("add-category").value,
+        assetDescription: document.getElementById("add-desc").value,
+        accountable: document.getElementById("add-accountable").value || "N/A",
+        office: document.getElementById("add-office").value || "MBO",
+        cost: costVal,
+        salvage: salvageVal,
+        usefulLife: document.getElementById("add-life").value || "5 yrs",
+        fund: document.getElementById("add-fund").value || "GF-PPEs",
+        bookValue: costVal,
+        status: document.getElementById("add-status").value,
+        remarks: "Newly Added",
+        photo: ""
+      };
+
+      rawAssets.unshift(newItem);
+      populateDropdownFilters();
+      filterTable();
+      closeAddModal();
+      document.getElementById("addAssetForm").reset();
+      alert("New asset added successfully!");
+    }
+
+    // REMARKS MODAL LOGIC
+    function openRemarksModal(propertyNo) {
+      const item = rawAssets.find(a => a.propertyNo === propertyNo);
+      if (!item) return;
+
+      document.getElementById("rm-prop").value = item.propertyNo;
+      document.getElementById("rm-desc").value = item.assetDescription;
+      document.getElementById("rm-text").value = item.remarks || "";
+
+      document.getElementById("remarksModal").classList.remove("hidden");
+      document.getElementById("remarksModal").classList.add("flex");
+    }
+
+    function closeRemarksModal() {
+      document.getElementById("remarksModal").classList.add("hidden");
+      document.getElementById("remarksModal").classList.remove("flex");
+    }
+
+    function saveRemarks() {
+      const propNo = document.getElementById("rm-prop").value;
+      const newRemark = document.getElementById("rm-text").value;
+
+      const item = rawAssets.find(a => a.propertyNo === propNo);
+      if (item) {
+        item.remarks = newRemark;
+
+        // Backend Integration Call
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(() => alert("Remarks updated in Google Sheets!"))
+            .withFailureHandler(err => alert("Error saving remarks: " + err.message))
+            .saveRemarksToSheet(propNo, newRemark);
+        } else {
+          alert("Remarks updated successfully!");
+        }
+      }
+      renderTable();
+      closeRemarksModal();
+    }
+
+    // STICKER MODAL LOGIC
+    function openStickerModal(propertyNo) {
+      const item = rawAssets.find(a => a.propertyNo === propertyNo);
+      if (!item) return;
+
+      document.getElementById("st-desc").value = item.assetDescription;
+      document.getElementById("st-prop").value = item.propertyNo;
+      document.getElementById("st-serial").value = item.serialNo || "N/A";
+      document.getElementById("st-cost").value = `₱${Number(item.cost).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+      document.getElementById("st-date").value = formatDateOnly(item.acquisitionDate);
+      document.getElementById("st-accountable").value = item.accountable || "N/A";
+      document.getElementById("st-invdate").value = formatDateOnly(new Date().toISOString());
+      document.getElementById("st-valdate").value = formatDateOnly(new Date().toISOString());
 
       updateStickerPreview();
-      document.getElementById('stickerModal').classList.remove('hidden');
-      document.getElementById('stickerModal').classList.add('flex');
+      document.getElementById("stickerModal").classList.remove("hidden");
+      document.getElementById("stickerModal").classList.add("flex");
+    }
+
+    function closeStickerModal() {
+      document.getElementById("stickerModal").classList.add("hidden");
+      document.getElementById("stickerModal").classList.remove("flex");
     }
 
     function updateStickerPreview() {
-      document.getElementById('pv-st-desc').innerText = document.getElementById('st-desc').value;
-      document.getElementById('pv-st-prop').innerText = document.getElementById('st-prop').value;
-      document.getElementById('pv-st-serial').innerText = document.getElementById('st-serial').value;
-      document.getElementById('pv-st-cost').innerText = document.getElementById('st-cost').value;
-      document.getElementById('pv-st-date').innerText = document.getElementById('st-date').value;
-      document.getElementById('pv-st-accountable').innerText = document.getElementById('st-accountable').value;
-      document.getElementById('pv-st-invdate').innerText = document.getElementById('st-invdate').value;
-      document.getElementById('pv-st-valdate').innerText = document.getElementById('st-valdate').value;
-      document.getElementById('pv-st-officer').innerText = document.getElementById('st-officer').value;
+      document.getElementById("pv-st-desc").innerText = document.getElementById("st-desc").value || "--";
+      document.getElementById("pv-st-prop").innerText = document.getElementById("st-prop").value || "--";
+      document.getElementById("pv-st-serial").innerText = document.getElementById("st-serial").value || "--";
+      document.getElementById("pv-st-cost").innerText = document.getElementById("st-cost").value || "--";
+      document.getElementById("pv-st-date").innerText = formatDateOnly(document.getElementById("st-date").value) || "--";
+      document.getElementById("pv-st-accountable").innerText = document.getElementById("st-accountable").value || "--";
+      document.getElementById("pv-st-invdate").innerText = formatDateOnly(document.getElementById("st-invdate").value) || "--";
+      document.getElementById("pv-st-valdate").innerText = formatDateOnly(document.getElementById("st-valdate").value) || "--";
+      document.getElementById("pv-st-officer").innerText = document.getElementById("st-officer").value || "ROBY MAY S TINONG";
     }
 
     function handleLogoUpload(event) {
@@ -860,66 +853,101 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          const logoImg = document.getElementById('stickerLogo');
-          logoImg.src = e.target.result;
-          logoImg.classList.remove('hidden');
+          uploadedLogoBase64 = e.target.result;
+          const logoImg = document.getElementById("stickerLogo");
+          logoImg.src = uploadedLogoBase64;
+          logoImg.classList.remove("hidden");
         };
         reader.readAsDataURL(file);
       }
     }
 
     function removeLogo() {
-      const logoImg = document.getElementById('stickerLogo');
-      logoImg.classList.add('hidden');
-      document.getElementById('logoInput').value = '';
+      uploadedLogoBase64 = "";
+      const logoImg = document.getElementById("stickerLogo");
+      logoImg.src = "";
+      logoImg.classList.add("hidden");
+      document.getElementById("logoInput").value = "";
     }
 
-    function closeStickerModal() {
-      document.getElementById('stickerModal').classList.add('hidden');
-      document.getElementById('stickerModal').classList.remove('flex');
-    }
+    // PAR MODAL LOGIC
+    function openParModal(propertyNo) {
+      const item = rawAssets.find(a => a.propertyNo === propertyNo);
+      if (!item) return;
 
-    /* PAR Modal Logic */
-    function openParModal(index) {
-      const item = filteredAssetData[index];
-      const costVal = parseCurrency(item["Cost (PHP)"]);
+      document.getElementById("par-entity").value = "MUNICIPALITY OF TINEG";
+      document.getElementById("par-fund").value = item.fund || "GF-PPEs";
+      document.getElementById("par-no").value = `PAR-${item.propertyNo}`;
+      document.getElementById("par-qty").value = "1";
+      document.getElementById("par-unit").value = "unit";
+      document.getElementById("par-receiver").value = item.accountable || "N/A";
+      document.getElementById("par-receiver-desig").value = `${item.office} Staff / End User`;
 
-      document.getElementById('par-fund').value = item["Fund"] || 'GF-PPEs';
-      document.getElementById('par-no').value = `PAR-${item["Property No."] || ''}`;
-      document.getElementById('par-receiver').value = item["Accountable"] || '';
-      
-      document.getElementById('pv-par-desc').innerText = item["Asset Description"] || '';
-      document.getElementById('pv-par-serial').innerText = item["Serial No."] || 'N/A';
-      document.getElementById('pv-par-remarks').innerText = item["Status"] || 'Active Asset';
-      document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
-      document.getElementById('pv-par-acqdate').innerText = item["Acquisition Date"] || '';
-      document.getElementById('pv-par-rec-date').innerText = item["Acquisition Date"] || '';
-      document.getElementById('pv-par-iss-date').innerText = item["Acquisition Date"] || '';
-      document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      // Set preview fields
+      document.getElementById("pv-par-entity").innerText = "MUNICIPALITY OF TINEG";
+      document.getElementById("pv-par-fund").innerText = item.fund || "GF-PPEs";
+      document.getElementById("pv-par-no").innerText = `PAR-${item.propertyNo}`;
+      document.getElementById("pv-par-qty").innerText = "1";
+      document.getElementById("pv-par-unit").innerText = "unit";
+      document.getElementById("pv-par-desc").innerText = item.assetDescription;
+      document.getElementById("pv-par-serial").innerText = item.serialNo || "N/A";
+      document.getElementById("pv-par-remarks").innerText = item.remarks || item.status;
+      document.getElementById("pv-par-prop").innerText = item.propertyNo;
+      document.getElementById("pv-par-acqdate").innerText = formatDateOnly(item.acquisitionDate);
+      document.getElementById("pv-par-amount").innerText = `₱${Number(item.cost).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+      document.getElementById("pv-par-receiver").innerText = item.accountable || "--";
+      document.getElementById("pv-par-receiver-desig").innerText = `${item.office} Staff / End User`;
+      document.getElementById("pv-par-rec-date").innerText = formatDateOnly(new Date().toISOString());
+      document.getElementById("pv-par-iss-date").innerText = formatDateOnly(new Date().toISOString());
 
-      updateParPreview();
-      document.getElementById('parModal').classList.remove('hidden');
-      document.getElementById('parModal').classList.add('flex');
-    }
-
-    function updateParPreview() {
-      document.getElementById('pv-par-entity').innerText = document.getElementById('par-entity').value;
-      document.getElementById('pv-par-fund').innerText = document.getElementById('par-fund').value;
-      document.getElementById('pv-par-no').innerText = document.getElementById('par-no').value;
-      document.getElementById('pv-par-qty').innerText = document.getElementById('par-qty').value;
-      document.getElementById('pv-par-unit').innerText = document.getElementById('par-unit').value;
-      document.getElementById('pv-par-receiver').innerText = document.getElementById('par-receiver').value;
-      document.getElementById('pv-par-receiver-desig').innerText = document.getElementById('par-receiver-desig').value;
-      document.getElementById('pv-par-issuer').innerText = document.getElementById('par-issuer').value;
-      document.getElementById('pv-par-issuer-desig').innerText = document.getElementById('par-issuer-desig').value;
+      document.getElementById("parModal").classList.remove("hidden");
+      document.getElementById("parModal").classList.add("flex");
     }
 
     function closeParModal() {
-      document.getElementById('parModal').classList.add('hidden');
-      document.getElementById('parModal').classList.remove('flex');
+      document.getElementById("parModal").classList.add("hidden");
+      document.getElementById("parModal").classList.remove("flex");
     }
 
-    fetchAssetData();
+    function updateParPreview() {
+      document.getElementById("pv-par-entity").innerText = document.getElementById("par-entity").value || "MUNICIPALITY OF TINEG";
+      document.getElementById("pv-par-fund").innerText = document.getElementById("par-fund").value || "--";
+      document.getElementById("pv-par-no").innerText = document.getElementById("par-no").value || "--";
+      document.getElementById("pv-par-qty").innerText = document.getElementById("par-qty").value || "1";
+      document.getElementById("pv-par-unit").innerText = document.getElementById("par-unit").value || "unit";
+      document.getElementById("pv-par-receiver").innerText = document.getElementById("par-receiver").value || "--";
+      document.getElementById("pv-par-receiver-desig").innerText = document.getElementById("par-receiver-desig").value || "--";
+      document.getElementById("pv-par-issuer").innerText = document.getElementById("par-issuer").value || "ROBY MAY S TINONG";
+      document.getElementById("pv-par-issuer-desig").innerText = document.getElementById("par-issuer-desig").value || "Property Officer";
+    }
+
+    // Fetch Asset Data from Google Apps Script Backend
+    function fetchAssetData() {
+      if (!API_URL) return;
+      
+      const tbody = document.getElementById("asset-table-body");
+      tbody.innerHTML = `<tr><td colspan="15" class="py-8 text-center text-slate-400 font-medium">Fetching latest data from Google Sheets...</td></tr>`;
+
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            rawAssets = data.map(item => ({
+              ...item,
+              acquisitionDate: formatDateOnly(item.acquisitionDate)
+            }));
+            populateDropdownFilters();
+            filterTable();
+            alert("Data refreshed successfully!");
+          } else {
+            renderTable();
+          }
+        })
+        .catch(err => {
+          console.warn("Using local mock dataset. Backend error:", err);
+          renderTable();
+        });
+    }
   </script>
 </body>
 </html>
