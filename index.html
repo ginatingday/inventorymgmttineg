@@ -7,21 +7,23 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @media print {
-      body * { visibility: hidden; }
-      #printableArea, #printableArea * { visibility: visible; }
+      body * { visibility: hidden !important; }
+      #printableArea, #printableArea * { visibility: visible !important; }
       #printableArea {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 20px !important;
         box-shadow: none !important;
+        border: none !important;
       }
       .no-print { display: none !important; }
     }
-    /* Custom Scrollbar for Dark Theme */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #0b0f19; }
-    ::-webkit-scrollbar-thumb { background: #1f2937; rounded: 3px; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
   </style>
 </head>
 <body class="bg-[#060911] text-slate-200 font-sans min-h-screen text-xs">
@@ -49,17 +51,14 @@
         <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
           <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">TOTAL LEDGER ASSETS</p>
           <h2 class="text-2xl font-black text-white" id="stat-total-items">0 Items</h2>
-          <div class="absolute right-3 bottom-3 opacity-10 text-slate-400 text-3xl">📦</div>
         </div>
         <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
           <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">TOTAL HISTORIC COST</p>
           <h2 class="text-2xl font-black text-emerald-400" id="stat-total-cost">₱0.00</h2>
-          <div class="absolute right-3 bottom-3 opacity-10 text-emerald-400 text-3xl">💵</div>
         </div>
         <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
           <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">NET BOOK VALUE</p>
           <h2 class="text-2xl font-black text-cyan-400" id="stat-book-value">₱0.00</h2>
-          <div class="absolute right-3 bottom-3 opacity-10 text-cyan-400 text-3xl">📊</div>
         </div>
       </div>
 
@@ -76,14 +75,15 @@
           </select>
 
           <select id="filterSheets" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
-            <option value="">All Sheets / Funds</option>
+            <option value="">All Funds</option>
             <option value="GF-PPEs">GF-PPEs</option>
             <option value="SEF">SEF</option>
             <option value="Trust Fund">Trust Fund</option>
           </select>
 
           <select id="filterOffice" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
-            <option value="">MAGO</option>
+            <option value="">All Offices</option>
+            <option value="MAGO">MAGO</option>
             <option value="HRMO">HRMO</option>
             <option value="BUDGET">BUDGET</option>
             <option value="MHO">MHO</option>
@@ -100,30 +100,32 @@
         </div>
       </div>
 
-      <!-- Main Ledger Table -->
+      <!-- Main Ledger Table (Mapped to exact Sheet columns) -->
       <div class="bg-[#0b0f19] border border-slate-800/80 rounded-lg overflow-x-auto shadow-2xl">
         <table class="w-full text-left text-[11px] whitespace-nowrap">
           <thead class="bg-[#0f1523] text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
             <tr>
-              <th class="py-3 px-2 text-center">PHOTOS</th>
-              <th class="py-3 px-2">PROPERTY NO.</th>
-              <th class="py-3 px-2">ACQUISITION DATE</th>
-              <th class="py-3 px-3">ASSET DESCRIPTION</th>
-              <th class="py-3 px-2">ACCOUNTABLE</th>
-              <th class="py-3 px-2">ASSIGNED OFFICE</th>
-              <th class="py-3 px-2">FUND ORIGIN</th>
-              <th class="py-3 px-2 text-right">COST</th>
-              <th class="py-3 px-2 text-right">SALVAGE</th>
-              <th class="py-3 px-2 text-center">LIFE</th>
-              <th class="py-3 px-2 text-right">BOOK VALUE</th>
-              <th class="py-3 px-2 text-center">STATUS</th>
-              <th class="py-3 px-2">REMARKS</th>
-              <th class="py-3 px-3 text-center">ACTIONS</th>
+              <th class="py-3 px-2 text-center">Photos</th>
+              <th class="py-3 px-2">Property No.</th>
+              <th class="py-3 px-2">Serial No.</th>
+              <th class="py-3 px-2">Acquisition Date</th>
+              <th class="py-3 px-3">Asset Description</th>
+              <th class="py-3 px-2">Accountable</th>
+              <th class="py-3 px-2">Category</th>
+              <th class="py-3 px-2">Office</th>
+              <th class="py-3 px-2">Fund</th>
+              <th class="py-3 px-2 text-right">Cost (PHP)</th>
+              <th class="py-3 px-2 text-right">Salvage (PHP)</th>
+              <th class="py-3 px-2 text-center">Useful Life</th>
+              <th class="py-3 px-2 text-right">Book Value (PHP)</th>
+              <th class="py-3 px-2 text-center">Status</th>
+              <th class="py-3 px-2">Remarks</th>
+              <th class="py-3 px-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody id="asset-table-body" class="divide-y divide-slate-800/50 text-slate-300">
             <tr>
-              <td colspan="14" class="py-8 text-center text-slate-500">Loading asset records from Google Sheet...</td>
+              <td colspan="16" class="py-8 text-center text-slate-500">Loading asset records from Google Sheet...</td>
             </tr>
           </tbody>
         </table>
@@ -138,49 +140,59 @@
       <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-2.5 text-xs">
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-slate-400 text-[10px]">PROPERTY NO.</label>
+            <label class="text-slate-400 text-[10px]">Property No.</label>
             <input type="text" id="add-prop" required placeholder="XV-001" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-amber-400 font-bold">
           </div>
           <div>
-            <label class="text-slate-400 text-[10px]">ACQUISITION DATE</label>
+            <label class="text-slate-400 text-[10px]">Serial No.</label>
+            <input type="text" id="add-serial" placeholder="N/A" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">Acquisition Date</label>
             <input type="date" id="add-date" required class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">Category</label>
+            <input type="text" id="add-category" placeholder="ICT Equipment" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
         </div>
         <div>
-          <label class="text-slate-400 text-[10px]">ASSET DESCRIPTION</label>
+          <label class="text-slate-400 text-[10px]">Asset Description</label>
           <input type="text" id="add-desc" required placeholder="Desktop Monitor" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-slate-400 text-[10px]">ACCOUNTABLE PERSON</label>
+            <label class="text-slate-400 text-[10px]">Accountable</label>
             <input type="text" id="add-accountable" placeholder="N/A" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
-            <label class="text-slate-400 text-[10px]">ASSIGNED OFFICE</label>
+            <label class="text-slate-400 text-[10px]">Office</label>
             <input type="text" id="add-office" value="MAGO" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
         </div>
         <div class="grid grid-cols-3 gap-2">
           <div>
-            <label class="text-slate-400 text-[10px]">COST (₱)</label>
+            <label class="text-slate-400 text-[10px]">Cost (PHP)</label>
             <input type="number" step="0.01" id="add-cost" required placeholder="4900.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
-            <label class="text-slate-400 text-[10px]">SALVAGE (₱)</label>
+            <label class="text-slate-400 text-[10px]">Salvage (PHP)</label>
             <input type="number" step="0.01" id="add-salvage" placeholder="245.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
-            <label class="text-slate-400 text-[10px]">LIFE (YRS)</label>
-            <input type="number" id="add-life" value="5" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <label class="text-slate-400 text-[10px]">Useful Life</label>
+            <input type="text" id="add-life" value="5 yrs" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-slate-400 text-[10px]">FUND ORIGIN</label>
+            <label class="text-slate-400 text-[10px]">Fund</label>
             <input type="text" id="add-fund" value="GF-PPEs" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
-            <label class="text-slate-400 text-[10px]">STATUS</label>
+            <label class="text-slate-400 text-[10px]">Status</label>
             <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
               <option value="Fully Depreciated">Fully Depreciated</option>
               <option value="Active Asset">Active Asset</option>
@@ -195,42 +207,141 @@
     </div>
   </div>
 
-  <!-- STICKER PREVIEW MODAL -->
-  <div id="stickerModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
-    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-4xl flex overflow-hidden max-h-[90vh]">
-      <div class="w-1/3 p-4 border-r border-slate-800 overflow-y-auto">
-        <h3 class="text-emerald-400 font-bold mb-3">🏷️ STICKER DETAILS</h3>
-        <div class="space-y-2 text-xs">
-          <div><label class="text-slate-400">DESCRIPTION</label><input type="text" id="st-desc" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-white"></div>
-          <div><label class="text-slate-400">PROPERTY NO.</label><input type="text" id="st-prop" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-amber-400 font-bold"></div>
-          <div><label class="text-slate-400">SERIAL NO.</label><input type="text" id="st-serial" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-white"></div>
-          <div><label class="text-slate-400">COST</label><input type="text" id="st-cost" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-white"></div>
-          <div><label class="text-slate-400">ACCOUNTABLE</label><input type="text" id="st-accountable" oninput="updateStickerPreview()" class="w-full bg-[#060911] border border-slate-800 p-1.5 rounded text-white"></div>
-        </div>
-        <div class="mt-4 flex justify-between">
-          <button onclick="closeStickerModal()" class="bg-slate-800 px-3 py-1.5 rounded text-slate-300">Close</button>
-          <button onclick="window.print()" class="bg-emerald-500 text-slate-950 font-bold px-3 py-1.5 rounded">🖨️ Print Sticker</button>
-        </div>
+  <!-- PROPERTY INVENTORY STICKER MODAL -->
+  <div id="stickerModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      
+      <!-- Header Bar -->
+      <div class="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center bg-[#0b0f19]">
+        <h2 class="text-white font-bold text-base">Property Inventory Sticker</h2>
+        <button onclick="closeStickerModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
-      <div class="w-2/3 p-6 bg-slate-950 flex justify-center items-center">
-        <div id="printableArea" class="bg-white text-slate-900 p-5 rounded-sm w-[380px] border border-slate-300 shadow-2xl text-center text-xs">
-          <div class="font-bold text-[9px] uppercase leading-tight">
-            Republic of the Philippines<br>Province of Abra<br>
-            <span class="text-xs font-black">MUNICIPALITY OF TINEG</span>
+
+      <!-- Content Grid -->
+      <div class="p-6 grid grid-cols-12 gap-6 overflow-y-auto">
+        
+        <!-- Left Edit Column -->
+        <div class="col-span-5 bg-[#080d19] border border-slate-800/80 p-5 rounded-xl space-y-4">
+          <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">🔥 EDIT STICKER FIELDS</h3>
+          
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">MUNICIPALITY LOGO</label>
+            <div class="flex items-center gap-3">
+              <label class="cursor-pointer bg-[#111827] border border-slate-700 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded text-xs flex items-center gap-1.5 font-medium">
+                🏛️ Upload Logo
+                <input type="file" id="logoInput" accept="image/*" onchange="handleLogoUpload(event)" class="hidden">
+              </label>
+              <button onclick="removeLogo()" class="text-rose-400 hover:text-rose-300 text-xs">Remove</button>
+            </div>
           </div>
-          <div class="border-b-2 border-slate-900 font-bold my-1.5 py-0.5 tracking-wider uppercase text-[11px]">
-            PROPERTY INVENTORY STICKER
+
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">DESCRIPTION</label>
+            <input type="text" id="st-desc" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
-          <table class="w-full border-collapse border border-slate-400 text-left my-2 font-mono text-[10px]">
-            <tr><td class="border border-slate-400 p-1 font-bold w-1/3">Description:</td><td id="pv-st-desc" class="border border-slate-400 p-1 font-bold uppercase">--</td></tr>
-            <tr><td class="border border-slate-400 p-1 font-bold">Property No:</td><td id="pv-st-prop" class="border border-slate-400 p-1 font-bold text-amber-700">--</td></tr>
-            <tr><td class="border border-slate-400 p-1 font-bold">Serial No:</td><td id="pv-st-serial" class="border border-slate-400 p-1">--</td></tr>
-            <tr><td class="border border-slate-400 p-1 font-bold">Cost:</td><td id="pv-st-cost" class="border border-slate-400 p-1">--</td></tr>
-            <tr><td class="border border-slate-400 p-1 font-bold">Accountable:</td><td id="pv-st-accountable" class="border border-slate-400 p-1 font-bold uppercase">--</td></tr>
-          </table>
-          <p class="text-[8px] text-red-600 font-bold mt-2">DO NOT REMOVE UNDER PENALTY OF LAW</p>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">PROPERTY NO.</label>
+              <input type="text" id="st-prop" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-amber-400 font-bold focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">SERIAL NO.</label>
+              <input type="text" id="st-serial" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">COST</label>
+              <input type="text" id="st-cost" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">DATE ACQUIRED</label>
+              <input type="text" id="st-date" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ACCOUNTABLE</label>
+              <input type="text" id="st-accountable" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">INVENTORY DATE</label>
+              <input type="text" id="st-invdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">VALIDATED DATE</label>
+              <input type="text" id="st-valdate" placeholder="e.g. 24-Mar-25" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">PROPERTY OFFICER</label>
+              <input type="text" id="st-officer" value="ROBY MAY S TINONG" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-2 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
         </div>
+
+        <!-- Right Live Preview Card -->
+        <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
+          
+          <div id="printableArea" class="bg-white text-slate-900 p-6 rounded border border-slate-300 w-[440px] shadow-2xl text-center">
+            
+            <div class="flex flex-col items-center justify-center">
+              <img id="stickerLogo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Coat_of_arms_placeholder.svg/200px-Coat_of_arms_placeholder.svg.png" class="w-14 h-14 mb-1 hidden" alt="LGU Seal">
+              <div class="font-bold text-[11px] leading-tight text-slate-800">
+                Republic of the Philippines<br>
+                Cordillera Administrative Region<br>
+                Province of Abra<br>
+                <span class="text-xs font-black tracking-wide">MUNICIPALITY OF TINEG</span>
+              </div>
+            </div>
+
+            <div class="border-y-2 border-slate-900 font-black my-2 py-1 tracking-wider uppercase text-xs text-slate-900">
+              PROPERTY INVENTORY STICKER
+            </div>
+
+            <table class="w-full border-collapse border border-slate-300 text-left my-2 text-[11px]">
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold w-1/3 text-slate-700">Property Description:</td><td id="pv-st-desc" class="p-1.5 font-black uppercase text-slate-900">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Property Number:</td><td id="pv-st-prop" class="p-1.5 font-bold text-slate-900">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Serial Number:</td><td id="pv-st-serial" class="p-1.5 text-slate-800">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Acquisition Cost:</td><td id="pv-st-cost" class="p-1.5 text-slate-800">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Acquisition Date:</td><td id="pv-st-date" class="p-1.5 text-slate-800">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Accountable:</td><td id="pv-st-accountable" class="p-1.5 font-bold uppercase text-slate-900">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Inventory Date:</td><td id="pv-st-invdate" class="p-1.5 text-slate-800">--</td></tr>
+              <tr>
+                <td class="p-1.5 font-bold text-slate-700 align-bottom">Validated Date:</td>
+                <td class="p-1.5 pt-6 text-center">
+                  <div id="pv-st-valdate" class="text-[10px] text-slate-600 mb-2"></div>
+                  <div class="border-t border-slate-800 pt-0.5">
+                    <p id="pv-st-officer" class="font-bold text-[11px] uppercase leading-none">ROBY MAY S TINONG</p>
+                    <p class="text-[9px] text-slate-500 leading-tight">Property Officer</p>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <div class="mt-3">
+              <p class="text-[10px] text-red-600 font-bold uppercase tracking-tight">NOTE PLEASE DO NOT REMOVE!</p>
+              <p class="text-[8px] text-slate-500">Unauthorized removal or tampering will be subject to disciplinary action.</p>
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
+
+      <div class="px-6 py-4 border-t border-slate-800/80 bg-[#0b0f19] flex justify-end gap-3">
+        <button onclick="closeStickerModal()" class="bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium px-5 py-2 rounded-lg text-xs">Close</button>
+        <button onclick="window.print()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
+          🖨️ Print Sticker
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -238,9 +349,17 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
     let rawAssetData = [];
 
+    // Helper to safely parse numbers with currency symbols or commas
+    function parseCurrency(val) {
+      if (val === undefined || val === null || val === '') return 0;
+      if (typeof val === 'number') return val;
+      const cleaned = String(val).replace(/[^0-9.-]+/g, "");
+      return parseFloat(cleaned) || 0;
+    }
+
     async function fetchAssetData() {
       const tbody = document.getElementById('asset-table-body');
-      tbody.innerHTML = `<tr><td colspan="14" class="py-8 text-center text-slate-400">Fetching asset ledger...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="16" class="py-8 text-center text-slate-400">Fetching asset ledger...</td></tr>`;
 
       try {
         const response = await fetch(API_URL);
@@ -249,7 +368,7 @@
         calculateMetrics(rawAssetData);
       } catch (error) {
         console.error("Error fetching data:", error);
-        tbody.innerHTML = `<tr><td colspan="14" class="py-8 text-center text-red-400">Error loading asset data. Verify Google Apps Script Web App permissions.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="16" class="py-8 text-center text-red-400">Error loading asset data. Verify Google Apps Script Web App permissions.</td></tr>`;
       }
     }
 
@@ -258,47 +377,55 @@
       tbody.innerHTML = '';
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="14" class="py-8 text-center text-slate-500">No matching assets found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="16" class="py-8 text-center text-slate-500">No matching assets found.</td></tr>`;
         return;
       }
 
       data.forEach((item, index) => {
-        const propNo = item["PROPERTY NO."] || item["Property No."] || 'N/A';
-        const date = item["ACQUISITION DATE"] || item["Acquisition Date"] || 'N/A';
-        const desc = item["ASSET DESCRIPTION"] || item["Asset Description"] || 'N/A';
-        const accountable = item["ACCOUNTABLE"] || 'N/A';
-        const office = item["ASSIGNED OFFICE"] || item["Assigned Office"] || 'MAGO';
-        const fund = item["FUND ORIGIN"] || item["Fund Origin"] || 'GF-PPEs';
-        const cost = Number(item["COST"] || item["Cost"] || 0);
-        const salvage = Number(item["SALVAGE"] || item["Salvage"] || (cost * 0.05));
-        const life = item["LIFE"] || item["Life"] || '5 yrs';
-        const bookVal = Number(item["BOOK VALUE"] || item["Book Value"] || salvage);
-        const status = item["STATUS"] || item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
-        const remarks = item["REMARKS"] || item["Remarks"] || status;
+        // Direct Mapping to exact Google Sheet Headers
+        const photoUrl = item["Photos"] || '';
+        const propNo = item["Property No."] || 'N/A';
+        const serialNo = item["Serial No."] || 'N/A';
+        const date = item["Acquisition Date"] || 'N/A';
+        const desc = item["Asset Description"] || 'N/A';
+        const accountable = item["Accountable"] || 'N/A';
+        const category = item["Category"] || 'N/A';
+        const office = item["Office"] || 'MAGO';
+        const fund = item["Fund"] || 'GF-PPEs';
+        
+        const cost = parseCurrency(item["Cost (PHP)"]);
+        const salvage = parseCurrency(item["Salvage (PHP)"]) || (cost * 0.05);
+        const life = item["Useful Life"] || '5 yrs';
+        const bookVal = parseCurrency(item["Book Value (PHP)"]) || salvage;
+        
+        const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
+        const remarks = item["Remarks"] || status;
 
-        const isDepreciated = status.toLowerCase().includes('fully');
+        const isDepreciated = String(status).toLowerCase().includes('fully');
         const statusBadge = isDepreciated 
           ? `<span class="bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Fully Depreciated</span>`
           : `<span class="bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Active Asset</span>`;
 
+        const photoCell = photoUrl 
+          ? `<a href="${photoUrl}" target="_blank"><img src="${photoUrl}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" /></a>`
+          : `<button class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto">📷 + Photo</button>`;
+
         const row = document.createElement('tr');
         row.className = "hover:bg-slate-800/30 transition-colors border-b border-slate-800/40";
         row.innerHTML = `
-          <td class="py-2.5 px-2 text-center">
-            <button class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium flex items-center gap-1 mx-auto">
-              📷 + Photo
-            </button>
-          </td>
+          <td class="py-2.5 px-2 text-center">${photoCell}</td>
           <td class="py-2.5 px-2 font-mono font-bold text-amber-400">${propNo}</td>
+          <td class="py-2.5 px-2 font-mono text-slate-300">${serialNo}</td>
           <td class="py-2.5 px-2 text-slate-300">${date}</td>
           <td class="py-2.5 px-3 font-semibold text-white max-w-xs truncate">${desc}</td>
           <td class="py-2.5 px-2 text-slate-300">${accountable}</td>
+          <td class="py-2.5 px-2 text-slate-400">${category}</td>
           <td class="py-2.5 px-2"><span class="bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded text-[10px] font-bold">${office}</span></td>
           <td class="py-2.5 px-2"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]">${fund}</span></td>
-          <td class="py-2.5 px-2 text-right font-mono text-slate-200">₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-          <td class="py-2.5 px-2 text-right font-mono text-slate-400">₱${salvage.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-slate-200">₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-slate-400">₱${salvage.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
           <td class="py-2.5 px-2 text-center text-emerald-400 font-medium">${life}</td>
-          <td class="py-2.5 px-2 text-right font-mono text-cyan-400 font-bold">₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-cyan-400 font-bold">₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
           <td class="py-2.5 px-2 text-center">${statusBadge}</td>
           <td class="py-2.5 px-2 text-slate-400">${remarks}</td>
           <td class="py-2.5 px-3 text-center">
@@ -316,11 +443,11 @@
 
     function calculateMetrics(data) {
       document.getElementById('stat-total-items').innerText = `${data.length} Items`;
-      const totalCost = data.reduce((acc, curr) => acc + Number(curr["COST"] || curr["Cost"] || 0), 0);
-      const totalBook = data.reduce((acc, curr) => acc + Number(curr["BOOK VALUE"] || curr["Book Value"] || 0), 0);
+      const totalCost = data.reduce((acc, curr) => acc + parseCurrency(curr["Cost (PHP)"]), 0);
+      const totalBook = data.reduce((acc, curr) => acc + parseCurrency(curr["Book Value (PHP)"]), 0);
 
-      document.getElementById('stat-total-cost').innerText = `₱${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-      document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      document.getElementById('stat-total-cost').innerText = `₱${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     }
 
     async function submitNewAsset(e) {
@@ -330,17 +457,19 @@
       submitBtn.disabled = true;
 
       const payload = {
-        propertyNo: document.getElementById('add-prop').value,
-        acquisitionDate: document.getElementById('add-date').value,
-        assetDescription: document.getElementById('add-desc').value,
-        accountable: document.getElementById('add-accountable').value,
-        office: document.getElementById('add-office').value,
-        fund: document.getElementById('add-fund').value,
-        cost: document.getElementById('add-cost').value,
-        salvage: document.getElementById('add-salvage').value,
-        life: document.getElementById('add-life').value + ' yrs',
-        bookValue: document.getElementById('add-salvage').value,
-        status: document.getElementById('add-status').value
+        "Property No.": document.getElementById('add-prop').value,
+        "Serial No.": document.getElementById('add-serial').value,
+        "Acquisition Date": document.getElementById('add-date').value,
+        "Asset Description": document.getElementById('add-desc').value,
+        "Accountable": document.getElementById('add-accountable').value,
+        "Category": document.getElementById('add-category').value,
+        "Office": document.getElementById('add-office').value,
+        "Fund": document.getElementById('add-fund').value,
+        "Cost (PHP)": document.getElementById('add-cost').value,
+        "Salvage (PHP)": document.getElementById('add-salvage').value,
+        "Useful Life": document.getElementById('add-life').value,
+        "Book Value (PHP)": document.getElementById('add-salvage').value,
+        "Status": document.getElementById('add-status').value
       };
 
       try {
@@ -367,15 +496,21 @@
       const q = document.getElementById('searchInput').value.toLowerCase();
       const cat = document.getElementById('filterCategory').value.toLowerCase();
       const fund = document.getElementById('filterSheets').value.toLowerCase();
+      const office = document.getElementById('filterOffice').value.toLowerCase();
 
       const filtered = rawAssetData.filter(item => {
-        const desc = (item["ASSET DESCRIPTION"] || item["Asset Description"] || '').toLowerCase();
-        const prop = (item["PROPERTY NO."] || item["Property No."] || '').toLowerCase();
-        const itemFund = (item["FUND ORIGIN"] || item["Fund Origin"] || 'gf-ppes').toLowerCase();
+        const desc = String(item["Asset Description"] || '').toLowerCase();
+        const prop = String(item["Property No."] || '').toLowerCase();
+        const itemCat = String(item["Category"] || '').toLowerCase();
+        const itemFund = String(item["Fund"] || '').toLowerCase();
+        const itemOffice = String(item["Office"] || '').toLowerCase();
 
         const matchesQuery = desc.includes(q) || prop.includes(q);
+        const matchesCat = !cat || itemCat.includes(cat);
         const matchesFund = !fund || itemFund.includes(fund);
-        return matchesQuery && matchesFund;
+        const matchesOffice = !office || itemOffice.includes(office);
+
+        return matchesQuery && matchesCat && matchesFund && matchesOffice;
       });
 
       renderTable(filtered);
@@ -393,11 +528,16 @@
 
     function openStickerModal(index) {
       const item = rawAssetData[index];
-      document.getElementById('st-desc').value = item["ASSET DESCRIPTION"] || item["Asset Description"] || '';
-      document.getElementById('st-prop').value = item["PROPERTY NO."] || item["Property No."] || '';
-      document.getElementById('st-serial').value = item["SERIAL NO."] || item["Serial No."] || 'N/A';
-      document.getElementById('st-cost').value = `₱${Number(item["COST"] || item["Cost"] || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-      document.getElementById('st-accountable').value = item["ACCOUNTABLE"] || item["Accountable"] || 'N/A';
+      const costVal = parseCurrency(item["Cost (PHP)"]);
+
+      document.getElementById('st-desc').value = item["Asset Description"] || '';
+      document.getElementById('st-prop').value = item["Property No."] || '';
+      document.getElementById('st-serial').value = item["Serial No."] || '13250513129';
+      document.getElementById('st-cost').value = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('st-date').value = item["Acquisition Date"] || '';
+      document.getElementById('st-accountable').value = item["Accountable"] || '';
+      document.getElementById('st-invdate').value = '1-Sep-26';
+      document.getElementById('st-valdate').value = '';
 
       updateStickerPreview();
       document.getElementById('stickerModal').classList.remove('hidden');
@@ -409,7 +549,30 @@
       document.getElementById('pv-st-prop').innerText = document.getElementById('st-prop').value;
       document.getElementById('pv-st-serial').innerText = document.getElementById('st-serial').value;
       document.getElementById('pv-st-cost').innerText = document.getElementById('st-cost').value;
+      document.getElementById('pv-st-date').innerText = document.getElementById('st-date').value;
       document.getElementById('pv-st-accountable').innerText = document.getElementById('st-accountable').value;
+      document.getElementById('pv-st-invdate').innerText = document.getElementById('st-invdate').value;
+      document.getElementById('pv-st-valdate').innerText = document.getElementById('st-valdate').value;
+      document.getElementById('pv-st-officer').innerText = document.getElementById('st-officer').value;
+    }
+
+    function handleLogoUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const logoImg = document.getElementById('stickerLogo');
+          logoImg.src = e.target.result;
+          logoImg.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function removeLogo() {
+      const logoImg = document.getElementById('stickerLogo');
+      logoImg.classList.add('hidden');
+      document.getElementById('logoInput').value = '';
     }
 
     function closeStickerModal() {
