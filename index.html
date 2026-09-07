@@ -5,26 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Asset Inventory System</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+    }
+  </style>
 </head>
-<body class="bg-[#060911] text-slate-100 min-h-screen p-4 font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
 
   <!-- TOP HEADER -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-4 mb-6 gap-4">
+  <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-700 pb-4 mb-6 gap-4 no-print">
     <div>
-      <h1 class="text-xl font-bold text-emerald-400">INVENTORY MANAGEMENT SYSTEM</h1>
-      <p class="text-xs text-slate-400">Asset Tracking & Photo Synchronization</p>
+      <h1 class="text-2xl font-bold text-white tracking-wide">ASSET INVENTORY SYSTEM</h1>
+      <p class="text-xs text-slate-400">Local Government Unit Inventory Management</p>
     </div>
     <div class="flex items-center gap-3">
-      <button onclick="fetchAssetData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3 py-2 rounded transition">🔄 Refresh Data</button>
+      <button onclick="fetchAssetData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs px-3 py-2 rounded transition font-medium">🔄 Refresh</button>
+      <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 rounded transition font-medium">🖨️ Print Report</button>
     </div>
   </header>
 
   <!-- MAIN TABLE CONTAINER -->
-  <main class="bg-[#0b0f19] border border-slate-800 rounded-lg overflow-hidden shadow-xl">
+  <main class="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-lg">
     <div class="overflow-x-auto">
       <table class="w-full text-left text-xs border-collapse">
         <thead>
-          <tr class="bg-[#0e1424] text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[11px]">
+          <tr class="bg-slate-950 text-slate-300 border-b border-slate-700 uppercase tracking-wider font-semibold">
             <th class="p-3">Property No.</th>
             <th class="p-3">Serial No.</th>
             <th class="p-3">Acquisition Date</th>
@@ -33,15 +39,15 @@
             <th class="p-3">Category</th>
             <th class="p-3">Office</th>
             <th class="p-3">Fund</th>
-            <th class="p-3">Cost (PHP)</th>
-            <th class="p-3">Book Value</th>
-            <th class="p-3">Status</th>
-            <th class="p-3 text-center">Photo</th>
+            <th class="p-3 text-right">Cost (PHP)</th>
+            <th class="p-3 text-right">Book Value</th>
+            <th class="p-3 text-center">Status</th>
+            <th class="p-3 text-center no-print">Photo</th>
           </tr>
         </thead>
-        <tbody id="inventoryTableBody" class="divide-y divide-slate-800 text-slate-300">
+        <tbody id="inventoryTableBody" class="divide-y divide-slate-700 text-slate-200">
           <tr>
-            <td colspan="12" class="p-4 text-center text-slate-500">Loading inventory records...</td>
+            <td colspan="12" class="p-6 text-center text-slate-400">Loading inventory records...</td>
           </tr>
         </tbody>
       </table>
@@ -49,31 +55,30 @@
   </main>
 
   <!-- UPLOAD PHOTO MODAL -->
-  <div id="uploadPhotoModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
-    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-sm p-5 shadow-2xl">
-      <h3 class="text-emerald-400 font-bold text-sm mb-1">📷 UPLOAD ASSET PHOTO</h3>
+  <div id="uploadPhotoModal" class="fixed inset-0 bg-black/75 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-slate-800 border border-slate-600 rounded-lg w-full max-w-sm p-5 shadow-2xl">
+      <h3 class="text-white font-bold text-sm mb-1">📷 Upload Asset Photo</h3>
       <p id="upload-asset-prop" class="text-amber-400 font-mono text-xs mb-4"></p>
       
-      <input type="file" id="photoFileInput" accept="image/*" class="w-full text-xs text-slate-300 bg-[#060911] border border-slate-800 p-2 rounded mb-4 focus:outline-none focus:border-emerald-500">
+      <input type="file" id="photoFileInput" accept="image/*" class="w-full text-xs text-slate-300 bg-slate-900 border border-slate-700 p-2 rounded mb-4 focus:outline-none">
       
       <div class="flex justify-end gap-2">
-        <button onclick="closePhotoModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs transition">Cancel</button>
-        <button id="uploadPhotoBtn" onclick="submitPhotoUpload()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-1.5 rounded text-xs transition">Upload to Sheet</button>
+        <button onclick="closePhotoModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs transition">Cancel</button>
+        <button id="uploadPhotoBtn" onclick="submitPhotoUpload()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded text-xs transition">Upload</button>
       </div>
     </div>
   </div>
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    // Replace with your Google Apps Script Web App Deployment URL
-    const API_URL = "https://script.google.com/macros/s/AKfycbyTnvMRzK_-0Xv_n0gJM1KoNT70tmYEGONSl7INsYfMlyMlldJUN0eWAtW5K0kplA3ylw/exec"; 
+    // Paste your Google Apps Script Web App Deployment URL here
+    const API_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL"; 
     let selectedPhotoPropertyNo = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       fetchAssetData();
     });
 
-    // Fetch data from Google Sheet
     async function fetchAssetData() {
       const tbody = document.getElementById("inventoryTableBody");
       try {
@@ -82,15 +87,14 @@
         renderTable(data);
       } catch (error) {
         console.error("Error fetching data:", error);
-        tbody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-rose-400">Failed to load data from Google Sheet. Check API_URL.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-rose-400">Failed to load data from Google Sheet. Verify API_URL deployment settings.</td></tr>`;
       }
     }
 
-    // Render table rows dynamically
     function renderTable(items) {
       const tbody = document.getElementById("inventoryTableBody");
       if (!items || items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-slate-500">No asset records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-400">No asset records found.</td></tr>`;
         return;
       }
 
@@ -99,33 +103,32 @@
         const photoUrl = item["Photos"] || "";
 
         const photoCell = photoUrl 
-          ? `<a href="${photoUrl}" target="_blank"><img src="${photoUrl}" class="w-8 h-8 object-cover rounded border border-slate-700 mx-auto hover:scale-110 transition" /></a>`
-          : `<button onclick="openPhotoModal('${propNo}')" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto block">📷 + Photo</button>`;
+          ? `<a href="${photoUrl}" target="_blank"><img src="${photoUrl}" class="w-8 h-8 object-cover rounded border border-slate-600 mx-auto hover:opacity-80 transition" /></a>`
+          : `<button onclick="openPhotoModal('${propNo}')" class="bg-slate-700 hover:bg-slate-600 text-emerald-400 border border-slate-600 px-2 py-1 rounded text-[10px] font-medium mx-auto block">📷 + Photo</button>`;
 
         return `
-          <tr class="hover:bg-[#0e1424] transition">
-            <td class="p-3 font-mono font-bold text-slate-200">${propNo}</td>
+          <tr class="hover:bg-slate-750 transition">
+            <td class="p-3 font-mono font-semibold text-white">${propNo}</td>
             <td class="p-3">${item["Serial No."] || "-"}</td>
             <td class="p-3">${item["Acquisition Date"] || "-"}</td>
-            <td class="p-3 text-slate-100">${item["Asset Description"] || "-"}</td>
+            <td class="p-3 text-white">${item["Asset Description"] || "-"}</td>
             <td class="p-3">${item["Accountable"] || "-"}</td>
             <td class="p-3">${item["Category"] || "-"}</td>
             <td class="p-3">${item["Office"] || "-"}</td>
             <td class="p-3">${item["Fund"] || "-"}</td>
-            <td class="p-3 font-mono">${item["Cost (PHP)"] || "0.00"}</td>
-            <td class="p-3 font-mono">${item["Book Value (PHP)"] || "0.00"}</td>
-            <td class="p-3">
-              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">
+            <td class="p-3 text-right font-mono">${item["Cost (PHP)"] ? Number(item["Cost (PHP)"]).toLocaleString('en-US', {minimumFractionDigits: 2}) : "0.00"}</td>
+            <td class="p-3 text-right font-mono">${item["Book Value (PHP)"] ? Number(item["Book Value (PHP)"]).toLocaleString('en-US', {minimumFractionDigits: 2}) : "0.00"}</td>
+            <td class="p-3 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-900/50 text-emerald-300 border border-emerald-700">
                 ${item["Status"] || "Active"}
               </span>
             </td>
-            <td class="p-3 text-center">${photoCell}</td>
+            <td class="p-3 text-center no-print">${photoCell}</td>
           </tr>
         `;
       }).join("");
     }
 
-    // Modal controls
     function openPhotoModal(propNo) {
       selectedPhotoPropertyNo = propNo;
       document.getElementById('upload-asset-prop').innerText = `Property No: ${propNo}`;
@@ -140,7 +143,6 @@
       document.getElementById('uploadPhotoModal').classList.remove('flex');
     }
 
-    // Submit base64 encoded photo to Google Apps Script
     async function submitPhotoUpload() {
       const fileInput = document.getElementById('photoFileInput');
       if (!fileInput.files.length) {
@@ -171,14 +173,14 @@
             body: JSON.stringify(payload)
           });
           
-          alert("Photo upload submitted! Please refresh in a moment to view the updated image.");
+          alert("Photo submitted! Allow a few seconds for Google Drive to update, then click Refresh.");
           closePhotoModal();
-          setTimeout(fetchAssetData, 2000); // Trigger auto-refresh after 2 seconds
+          setTimeout(fetchAssetData, 2500);
         } catch (err) {
           console.error("Upload error:", err);
           alert("Failed to upload photo.");
-        } finally {
-          btn.innerText = "Upload to Sheet";
+        } fontally {
+          btn.innerText = "Upload";
           btn.disabled = false;
         }
       };
