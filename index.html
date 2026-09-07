@@ -11,34 +11,52 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     @media print {
-      /* Hide everything in the body by default */
+      /* Hide body content by default */
       body {
         visibility: hidden !important;
         background: white !important;
       }
 
-      /* Unhide the modals during print, but keep their dark overlay/controls hidden */
+      /* Hide both modals by default during print */
       #stickerModal, #parModal {
+        display: none !important;
+      }
+
+      /* Only show sticker modal when printing sticker */
+      body.print-sticker #stickerModal {
         display: block !important;
         position: static !important;
         background: none !important;
         padding: 0 !important;
       }
 
-      /* Hide non-printable UI elements inside the modals */
+      /* Only show PAR modal when printing PAR */
+      body.print-par #parModal {
+        display: block !important;
+        position: static !important;
+        background: none !important;
+        padding: 0 !important;
+      }
+
+      /* Hide non-printable UI controls inside modals */
       .no-print, 
-      #stickerModal > div > div:first-child, /* Modal Header */
-      #stickerModal > div > div:last-child,  /* Modal Footer */
-      #stickerModal .col-span-5,             /* Left Form Controls */
+      #stickerModal > div > div:first-child,
+      #stickerModal > div > div:last-child,
+      #stickerModal .col-span-5,
       #parModal > div > div:first-child,     
       #parModal > div > div:last-child,      
       #parModal .col-span-5 {
         display: none !important;
       }
 
-      /* Ensure printable target regions are visible and properly positioned */
-      #printableArea, #printableArea *,
-      #printablePARArea, #printablePARArea * {
+      /* Make active target area visible based on print mode */
+      body.print-sticker #printableArea,
+      body.print-sticker #printableArea * {
+        visibility: visible !important;
+      }
+
+      body.print-par #printablePARArea,
+      body.print-par #printablePARArea * {
         visibility: visible !important;
       }
 
@@ -438,7 +456,7 @@
 
       <div class="px-6 py-4 border-t border-slate-800/80 bg-[#0b0f19] flex justify-end gap-3">
         <button onclick="closeStickerModal()" class="bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium px-5 py-2 rounded-lg text-xs">Close</button>
-        <button onclick="window.print()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
+        <button onclick="printSticker()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
           🖨️ Print Sticker
         </button>
       </div>
@@ -596,7 +614,7 @@
 
       <div class="px-6 py-4 border-t border-slate-800/80 bg-[#0b0f19] flex justify-end gap-3">
         <button onclick="closeParModal()" class="bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium px-5 py-2 rounded-lg text-xs">Close</button>
-        <button onclick="window.print()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
+        <button onclick="printPAR()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
           🖨️ Print PAR Form
         </button>
       </div>
@@ -606,6 +624,22 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyTnvMRzK_-0Xv_n0gJM1KoNT70tmYEGONSl7INsYfMlyMlldJUN0eWAtW5K0kplA3ylw/exec";
     
+    function printSticker() {
+      document.body.classList.add('print-sticker');
+      document.body.classList.remove('print-par');
+      window.print();
+    }
+
+    function printPAR() {
+      document.body.classList.add('print-par');
+      document.body.classList.remove('print-sticker');
+      window.print();
+    }
+
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('print-sticker', 'print-par');
+    });
+
     function formatDateOnly(dateStr) {
       if (!dateStr || dateStr === 'N/A') return 'N/A';
       const d = new Date(dateStr);
