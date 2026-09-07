@@ -8,104 +8,76 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     @media print {
-      /* Hide everything by default */
       body * { 
         visibility: hidden !important; 
       }
 
-      /* Only show elements inside printableArea IF the sticker modal is visible */
-      #stickerModal:not(.hidden) #printableArea,
-      #stickerModal:not(.hidden) #printableArea * {
+      /* Sticker Print Rule */
+      #printableArea, #printableArea * {
         visibility: visible !important;
       }
-
-      #stickerModal:not(.hidden) #printableArea {
-        position: fixed !important;
+      #printableArea {
+        position: absolute !important;
         left: 0 !important;
         top: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 20px !important;
-        box-shadow: none !important;
-        border: none !important;
       }
 
-      /* Only show elements inside printablePARArea IF the PAR modal is visible */
-      #parModal:not(.hidden) #printablePARArea,
-      #parModal:not(.hidden) #printablePARArea * {
+      /* PAR Print Rule */
+      #printablePARArea, #printablePARArea * {
         visibility: visible !important;
       }
-
-      #parModal:not(.hidden) #printablePARArea {
-        position: fixed !important;
+      #printablePARArea {
+        position: absolute !important;
         left: 0 !important;
         top: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 20px !important;
-        box-shadow: none !important;
-        border: none !important;
       }
 
       .no-print { display: none !important; }
     }
-    
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0b0f19; }
-    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
   </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen font-sans antialiased">
+<body class="bg-gray-100 text-gray-800 p-6">
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight text-white">Property & Equipment Inventory</h1>
-        <p class="text-gray-400 text-sm mt-1">Track assets, print stickers, and generate PAR documents</p>
-      </div>
-      <button onclick="openModal('addModal')" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2.5 rounded-lg shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Add New Asset
+  <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <h1 class="text-2xl font-bold text-gray-800">Property & Equipment Inventory</h1>
+      <button onclick="openModal('addModal')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">
+        + Add New Asset
       </button>
-    </header>
+    </div>
 
-    <!-- Table Section -->
-    <div class="bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between gap-4">
-        <input type="text" id="searchInput" placeholder="Search by Property No, Item Name, or Assignee..." class="bg-gray-950 border border-gray-800 text-gray-200 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-80 p-2.5 outline-none transition">
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-300">
-          <thead class="text-xs uppercase bg-gray-950 text-gray-400 border-b border-gray-800">
-            <tr>
-              <th scope="col" class="px-6 py-4">Property No.</th>
-              <th scope="col" class="px-6 py-4">Item Name</th>
-              <th scope="col" class="px-6 py-4">Serial No.</th>
-              <th scope="col" class="px-6 py-4">Value</th>
-              <th scope="col" class="px-6 py-4">Assigned To</th>
-              <th scope="col" class="px-6 py-4 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="inventoryTable" class="divide-y divide-gray-800">
-            <!-- Table rows populated dynamically -->
-          </tbody>
-        </table>
-      </div>
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse border border-gray-200">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-600">
+            <th class="p-3 border-r">Property No.</th>
+            <th class="p-3 border-r">Item Name</th>
+            <th class="p-3 border-r">Serial No.</th>
+            <th class="p-3 border-r">Value</th>
+            <th class="p-3 border-r">Assigned To</th>
+            <th class="p-3 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryTable" class="text-sm divide-y divide-gray-200">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
     </div>
   </div>
 
   <!-- Sticker Modal -->
-  <div id="stickerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
-        <h3 class="text-lg font-semibold text-white">Property Inventory Sticker</h3>
-        <button onclick="closeModal('stickerModal')" class="text-gray-400 hover:text-white transition">&times;</button>
+  <div id="stickerModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <div class="flex justify-between items-center border-b pb-2 mb-4">
+        <h3 class="font-bold text-lg">Property Inventory Sticker</h3>
+        <button onclick="closeModal('stickerModal')" class="text-gray-500 hover:text-black">&times;</button>
       </div>
-      <div class="p-6 overflow-y-auto flex-1 flex justify-center">
+      
+      <div class="flex justify-center mb-6">
         <!-- Printable Area for Sticker -->
-        <div id="printableArea" class="bg-white text-black p-4 rounded border-2 border-black w-80 font-sans shadow-md">
-          <div class="text-center font-bold text-xs uppercase tracking-wider border-b-2 border-black pb-1 mb-2">
+        <div id="printableArea" class="bg-white text-black p-4 border-2 border-black w-80 font-sans">
+          <div class="text-center font-bold text-xs uppercase border-b-2 border-black pb-1 mb-2">
             Property Inventory Sticker
           </div>
           <div class="flex items-start justify-between gap-2 mb-3">
@@ -123,29 +95,31 @@
           </div>
         </div>
       </div>
-      <div class="p-4 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 no-print">
-        <button onclick="closeModal('stickerModal')" class="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition">Close</button>
-        <button onclick="window.print()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-lg shadow-blue-600/20 transition">Print Sticker</button>
+
+      <div class="flex justify-end gap-2 no-print border-t pt-4">
+        <button onclick="closeModal('stickerModal')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Close</button>
+        <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Print Sticker</button>
       </div>
     </div>
   </div>
 
   <!-- PAR Form Modal -->
-  <div id="parModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
-        <h3 class="text-lg font-semibold text-white">Property Acknowledgement Receipt (PAR)</h3>
-        <button onclick="closeModal('parModal')" class="text-gray-400 hover:text-white transition">&times;</button>
+  <div id="parModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+      <div class="flex justify-between items-center border-b pb-2 mb-4">
+        <h3 class="font-bold text-lg">Property Acknowledgement Receipt (PAR)</h3>
+        <button onclick="closeModal('parModal')" class="text-gray-500 hover:text-black">&times;</button>
       </div>
-      <div class="p-6 overflow-y-auto flex-1 flex justify-center bg-gray-800">
+
+      <div class="flex justify-center mb-6 max-h-[60vh] overflow-y-auto">
         <!-- Printable Area for PAR -->
-        <div id="printablePARArea" class="bg-white text-black p-8 rounded shadow-md w-full max-w-2xl font-serif text-xs leading-relaxed">
+        <div id="printablePARArea" class="bg-white text-black p-6 border w-full font-serif text-xs leading-relaxed">
           <div class="text-center font-bold mb-4">
             <p class="text-sm uppercase">Property Acknowledgement Receipt</p>
             <p class="text-[10px] font-normal text-gray-600">LGU Inventory Management System</p>
           </div>
           
-          <div class="flex justify-between mb-6">
+          <div class="flex justify-between mb-4">
             <div><span class="font-bold">Entity Name:</span> Local Government Unit</div>
             <div><span class="font-bold">PAR No:</span> <span id="parNo">PAR-2026-001</span></div>
           </div>
@@ -173,53 +147,49 @@
             </tbody>
           </table>
 
-          <div class="grid grid-cols-2 gap-8 mt-12 pt-4">
+          <div class="grid grid-cols-2 gap-8 mt-8 pt-4">
             <div>
-              <p class="mb-8">Received by:</p>
+              <p class="mb-6">Received by:</p>
               <div class="border-b border-black font-bold uppercase text-center" id="parReceivedBy">--</div>
               <p class="text-center text-[10px] mt-1">Signature over Printed Name</p>
-              <p class="text-center text-[10px] mt-1">Position / Office</p>
             </div>
             <div>
-              <p class="mb-8">Issued by:</p>
+              <p class="mb-6">Issued by:</p>
               <div class="border-b border-black font-bold uppercase text-center">Property Officer</div>
               <p class="text-center text-[10px] mt-1">Signature over Printed Name</p>
-              <p class="text-center text-[10px] mt-1">Supply and Property Unit</p>
             </div>
           </div>
         </div>
       </div>
-      <div class="p-4 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 no-print">
-        <button onclick="closeModal('parModal')" class="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition">Close</button>
-        <button onclick="window.print()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-lg shadow-blue-600/20 transition">Print PAR Form</button>
+
+      <div class="flex justify-end gap-2 no-print border-t pt-4">
+        <button onclick="closeModal('parModal')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Close</button>
+        <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Print PAR Form</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Sample Data
     const inventoryData = [
       { id: 1, propNo: '2026-001-IT', name: 'Laptop Computer', serial: 'SN-987654321', value: 'Php 45,000.00', date: '2026-01-15', assignee: 'Jane Doe' },
       { id: 2, propNo: '2026-002-OFF', name: 'Executive Desk', serial: 'N/A', value: 'Php 12,500.00', date: '2026-02-01', assignee: 'John Smith' },
     ];
-
-    let qrCodeInstance = null;
 
     function renderTable(data) {
       const tbody = document.getElementById('inventoryTable');
       tbody.innerHTML = '';
       data.forEach(item => {
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-gray-900/50 transition';
+        tr.className = 'hover:bg-gray-50';
         tr.innerHTML = `
-          <td class="px-6 py-4 font-mono text-sm text-blue-400">${item.propNo}</td>
-          <td class="px-6 py-4 font-medium text-white">${item.name}</td>
-          <td class="px-6 py-4 text-gray-400">${item.serial}</td>
-          <td class="px-6 py-4 text-gray-300">${item.value}</td>
-          <td class="px-6 py-4 text-gray-300">${item.assignee}</td>
-          <td class="px-6 py-4 text-center space-x-2">
-            <button onclick="openStickerModal(${item.id})" class="px-3 py-1.5 text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition">Sticker</button>
-            <button onclick="openParModal(${item.id})" class="px-3 py-1.5 text-xs font-medium text-green-400 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-md transition">PAR Form</button>
+          <td class="p-3 border-r font-mono text-blue-600">${item.propNo}</td>
+          <td class="p-3 border-r font-semibold">${item.name}</td>
+          <td class="p-3 border-r text-gray-600">${item.serial}</td>
+          <td class="p-3 border-r">${item.value}</td>
+          <td class="p-3 border-r">${item.assignee}</td>
+          <td class="p-3 text-center space-x-1">
+            <button onclick="openStickerModal(${item.id})" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 border border-blue-300 rounded hover:bg-blue-200">Sticker</button>
+            <button onclick="openParModal(${item.id})" class="px-2 py-1 text-xs bg-green-100 text-green-700 border border-green-300 rounded hover:bg-green-200">PAR Form</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -246,10 +216,9 @@
       document.getElementById('stDate').textContent = item.date;
       document.getElementById('stAssignee').textContent = item.assignee;
 
-      // Render QR
       const qrContainer = document.getElementById('qrcode');
       qrContainer.innerHTML = '';
-      qrCodeInstance = new QRCode(qrContainer, {
+      new QRCode(qrContainer, {
         text: item.propNo,
         width: 64,
         height: 64
@@ -271,18 +240,6 @@
       openModal('parModal');
     }
 
-    // Search filter
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = inventoryData.filter(item => 
-        item.propNo.toLowerCase().includes(query) ||
-        item.name.toLowerCase().includes(query) ||
-        item.assignee.toLowerCase().includes(query)
-      );
-      renderTable(filtered);
-    });
-
-    // Initial Load
     renderTable(inventoryData);
   </script>
 </body>
