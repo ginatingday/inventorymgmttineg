@@ -174,11 +174,11 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-slate-400 text-[10px]">Acquisition Date</label>
-            <input type="date" id="add-date" required class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <input type="date" id="add-date" onchange="computeCOARules()" required class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
             <label class="text-slate-400 text-[10px]">Category</label>
-            <select id="add-category" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <select id="add-category" onchange="computeCOARules()" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
               <option value="Capitalized Asset">Capitalized Asset (₱50k & Above)</option>
               <option value="Semi-Expendable Asset">Semi-Expendable Asset (Below ₱50k)</option>
             </select>
@@ -216,26 +216,30 @@
             <input type="number" step="0.01" id="add-cost" oninput="autoSelectCategoryByCost()" required placeholder="55000.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
           <div>
-            <label class="text-slate-400 text-[10px]">Salvage (PHP)</label>
-            <input type="number" step="0.01" id="add-salvage" placeholder="2750.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <label class="text-slate-400 text-[10px]">Salvage (PHP) [5% COA]</label>
+            <input type="number" step="0.01" id="add-salvage" readonly placeholder="0.00" class="w-full bg-[#0b0f19] border border-slate-800 p-2 rounded mt-1 text-amber-400 font-mono cursor-not-allowed">
           </div>
           <div>
             <label class="text-slate-400 text-[10px]">Useful Life</label>
-            <input type="text" id="add-life" value="5 yrs" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <input type="text" id="add-life" readonly value="5 yrs" class="w-full bg-[#0b0f19] border border-slate-800 p-2 rounded mt-1 text-emerald-400 font-mono cursor-not-allowed">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
+            <label class="text-slate-400 text-[10px]">Computed Book Value (PHP)</label>
+            <input type="number" step="0.01" id="add-bookvalue" readonly placeholder="0.00" class="w-full bg-[#0b0f19] border border-slate-800 p-2 rounded mt-1 text-cyan-400 font-bold font-mono cursor-not-allowed">
+          </div>
+          <div>
             <label class="text-slate-400 text-[10px]">Fund</label>
             <input type="text" id="add-fund" value="GF-PPEs" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
           </div>
-          <div>
-            <label class="text-slate-400 text-[10px]">Status</label>
-            <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
-              <option value="Active Asset">Active Asset</option>
-              <option value="Fully Depreciated">Fully Depreciated</option>
-            </select>
-          </div>
+        </div>
+        <div>
+          <label class="text-slate-400 text-[10px]">Status</label>
+          <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <option value="Active Asset">Active Asset</option>
+            <option value="Fully Depreciated">Fully Depreciated</option>
+          </select>
         </div>
         <div>
           <label class="text-slate-400 text-[10px]">Remarks</label>
@@ -354,6 +358,7 @@
         <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
           <div id="printableArea" class="bg-white text-slate-900 p-6 rounded border border-slate-300 w-[440px] shadow-2xl text-center">
             
+            <!-- HEADER WITH LOGO -->
             <div class="flex items-center justify-center gap-3 mb-1">
               <img id="stickerLogo" src="" class="w-12 h-12 flex-shrink-0 hidden object-contain" alt="LGU Seal">
               <div class="font-bold text-[11px] leading-tight text-slate-800 text-center">
@@ -573,33 +578,93 @@
       return d.toISOString().split('T')[0];
     }
 
+    /* --- COA COMPUTATION HELPER FUNCTIONS --- */
+    function computeCOARulesForAsset(cost, categoryStr, acqDateStr) {
+      const isSemi = (categoryStr && categoryStr.toLowerCase().includes('semi')) || cost < 50000;
+      
+      // COA Rule: Residual / Salvage Value is fixed at 5% of Acquisition Cost
+      const salvage = cost * 0.05;
+      
+      // COA Standard Useful Life: 3 years for Semi-Expendable, 5 years for Capitalized PPE
+      const yearsVal = isSemi ? 3 : 5;
+      const lifeStr = `${yearsVal} yrs`;
+      
+      // Straight-Line Depreciation Computation
+      let bookValue = salvage;
+      if (acqDateStr && acqDateStr !== 'N/A') {
+        const acqDate = new Date(acqDateStr);
+        const now = new Date();
+        
+        if (!isNaN(acqDate.getTime())) {
+          // Calculate elapsed months since acquisition
+          const monthsElapsed = (now.getFullYear() - acqDate.getFullYear()) * 12 + (now.getMonth() - acqDate.getMonth());
+          const totalMonths = yearsVal * 12;
+          
+          if (monthsElapsed <= 0) {
+            bookValue = cost;
+          } else if (monthsElapsed >= totalMonths) {
+            bookValue = salvage; // Fully depreciated down to salvage value
+          } else {
+            const depreciableAmount = cost - salvage;
+            const monthlyDepreciation = depreciableAmount / totalMonths;
+            bookValue = cost - (monthlyDepreciation * monthsElapsed);
+          }
+        }
+      } else {
+        bookValue = salvage;
+      }
+
+      return { salvage, lifeStr, bookValue, yearsVal };
+    }
+
+    function computeCOARules() {
+      const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
+      const catVal = document.getElementById('add-category').value;
+      const dateVal = document.getElementById('add-date').value;
+
+      const computed = computeCOARulesForAsset(costVal, catVal, dateVal);
+
+      document.getElementById('add-salvage').value = computed.salvage.toFixed(2);
+      document.getElementById('add-life').value = computed.lifeStr;
+      document.getElementById('add-bookvalue').value = computed.bookValue.toFixed(2);
+      
+      const statusSelect = document.getElementById('add-status');
+      if (computed.bookValue <= computed.salvage && costVal > 0) {
+        statusSelect.value = "Fully Depreciated";
+      } else {
+        statusSelect.value = "Active Asset";
+      }
+    }
+
+    // 20 Mock Data Entries
     const mock20Assets = [
-      {"Property No.": "XV-001", "Serial No.": "SN-99812", "Acquisition Date": "2023-01-15", "Asset Description": "Desktop Workstation i7", "Accountable": "JUAN DELA CRUZ", "Category": "Capitalized Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 65000, "Salvage (PHP)": 3250, "Useful Life": "5 yrs", "Book Value (PHP)": 3250, "Status": "Fully Depreciated", "Remarks": "Good working condition"},
-      {"Property No.": "XV-002", "Serial No.": "SN-44102", "Acquisition Date": "2023-03-20", "Asset Description": "Epson L3210 Printer", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 11500, "Salvage (PHP)": 575, "Useful Life": "3 yrs", "Book Value (PHP)": 575, "Status": "Fully Depreciated", "Remarks": "Needs printhead replacement"},
-      {"Property No.": "XV-003", "Serial No.": "SN-88123", "Acquisition Date": "2024-02-10", "Asset Description": "Executive Office Desk", "Accountable": "PEDRO PASCUAL", "Category": "Semi-Expendable Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 18500, "Salvage (PHP)": 925, "Useful Life": "5 yrs", "Book Value (PHP)": 11000, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-004", "Serial No.": "SN-10293", "Acquisition Date": "2024-05-12", "Asset Description": "Heavy Duty Paper Shredder", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 8500, "Salvage (PHP)": 425, "Useful Life": "3 yrs", "Book Value (PHP)": 5200, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-005", "Serial No.": "SN-77211", "Acquisition Date": "2024-06-01", "Asset Description": "Heavy Duty Photocopier Bizhub", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 145000, "Salvage (PHP)": 7250, "Useful Life": "5 yrs", "Book Value (PHP)": 110000, "Status": "Active Asset", "Remarks": "Regular maintenance maintained"},
-      {"Property No.": "XV-006", "Serial No.": "SN-33921", "Acquisition Date": "2024-07-15", "Asset Description": "Air Conditioner 2.0 HP Inverter", "Accountable": "CARMELITA TINGDAY", "Category": "Capitalized Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 52000, "Salvage (PHP)": 2600, "Useful Life": "5 yrs", "Book Value (PHP)": 42000, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-007", "Serial No.": "SN-55210", "Acquisition Date": "2024-08-01", "Asset Description": "Conference Table 10-Seater", "Accountable": "HONORIO LALUGAN", "Category": "Semi-Expendable Asset", "Office": "SB", "Fund": "GF-PPEs", "Cost (PHP)": 35000, "Salvage (PHP)": 1750, "Useful Life": "5 yrs", "Book Value (PHP)": 28000, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-008", "Serial No.": "SN-00291", "Acquisition Date": "2024-09-10", "Asset Description": "LCD Projector 4K", "Accountable": "GRETCHEN TINGDAY", "Category": "Capitalized Asset", "Office": "MPDO", "Fund": "20% DF", "Cost (PHP)": 58000, "Salvage (PHP)": 2900, "Useful Life": "5 yrs", "Book Value (PHP)": 49000, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-009", "Serial No.": "SN-11029", "Acquisition Date": "2024-10-05", "Asset Description": "Motorcycle 150cc Utility", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "GF-PPEs", "Cost (PHP)": 98000, "Salvage (PHP)": 4900, "Useful Life": "7 yrs", "Book Value (PHP)": 85000, "Status": "Active Asset", "Remarks": "Field vehicle"},
-      {"Property No.": "XV-010", "Serial No.": "SN-44912", "Acquisition Date": "2024-11-12", "Asset Description": "Ergonomic Mesh Chairs (Set of 5)", "Accountable": "QUEZADA SHERYLL", "Category": "Semi-Expendable Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 22500, "Salvage (PHP)": 1125, "Useful Life": "3 yrs", "Book Value (PHP)": 18000, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-011", "Serial No.": "SN-88201", "Acquisition Date": "2025-01-10", "Asset Description": "Starlink Satellite Internet Kit", "Accountable": "GINA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 28000, "Salvage (PHP)": 1400, "Useful Life": "3 yrs", "Book Value (PHP)": 24000, "Status": "Active Asset", "Remarks": "Installed at roof deck"},
-      {"Property No.": "XV-012", "Serial No.": "SN-33019", "Acquisition Date": "2025-02-14", "Asset Description": "UPS 1500VA Backup Power", "Accountable": "RAQUEL THOMPSON", "Category": "Semi-Expendable Asset", "Office": "ACCOUNTING", "Fund": "GF-PPEs", "Cost (PHP)": 9500, "Salvage (PHP)": 475, "Useful Life": "3 yrs", "Book Value (PHP)": 8500, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-013", "Serial No.": "SN-99102", "Acquisition Date": "2025-03-01", "Asset Description": "4Kw Gasoline Generator Unit", "Accountable": "KRIZA TINGDAY", "Category": "Capitalized Asset", "Office": "MDRRMO", "Fund": "5% LDRRM", "Cost (PHP)": 75000, "Salvage (PHP)": 3750, "Useful Life": "5 yrs", "Book Value (PHP)": 68000, "Status": "Active Asset", "Remarks": "Standby rescue unit"},
-      {"Property No.": "XV-014", "Serial No.": "SN-66512", "Acquisition Date": "2025-03-15", "Asset Description": "DSLR Camera System for Info", "Accountable": "KIMBERLYN QUEZADA", "Category": "Capitalized Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 62000, "Salvage (PHP)": 3100, "Useful Life": "5 yrs", "Book Value (PHP)": 58000, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-015", "Serial No.": "SN-12903", "Acquisition Date": "2025-04-02", "Asset Description": "Filing Cabinet 4-Drawer Steel", "Accountable": "JUAN DELA CRUZ", "Category": "Semi-Expendable Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 12000, "Salvage (PHP)": 600, "Useful Life": "5 yrs", "Book Value (PHP)": 11000, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-016", "Serial No.": "SN-77192", "Acquisition Date": "2025-05-10", "Asset Description": "Water Dispenser Hot/Cold", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 7800, "Salvage (PHP)": 390, "Useful Life": "3 yrs", "Book Value (PHP)": 7200, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-017", "Serial No.": "SN-88231", "Acquisition Date": "2025-06-01", "Asset Description": "Public Address System Speakers", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 89000, "Salvage (PHP)": 4450, "Useful Life": "5 yrs", "Book Value (PHP)": 84000, "Status": "Active Asset", "Remarks": "Used for public functions"},
-      {"Property No.": "XV-018", "Serial No.": "SN-33102", "Acquisition Date": "2025-06-20", "Asset Description": "Biometric Attendance Scanner", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 15500, "Salvage (PHP)": 775, "Useful Life": "3 yrs", "Book Value (PHP)": 14500, "Status": "Active Asset", "Remarks": ""},
-      {"Property No.": "XV-019", "Serial No.": "SN-00129", "Acquisition Date": "2025-07-05", "Asset Description": "Digital Vault Heavy Duty", "Accountable": "QUEZADA SHERYLL", "Category": "Capitalized Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 54000, "Salvage (PHP)": 2700, "Useful Life": "10 yrs", "Book Value (PHP)": 52000, "Status": "Active Asset", "Remarks": "Vault room level 1"},
-      {"Property No.": "XV-020", "Serial No.": "SN-44192", "Acquisition Date": "2025-08-12", "Asset Description": "Drone Unit for Agricultural Mapping", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "20% DF", "Cost (PHP)": 125000, "Salvage (PHP)": 6250, "Useful Life": "5 yrs", "Book Value (PHP)": 120000, "Status": "Active Asset", "Remarks": "Fully operational"}
+      {"Property No.": "XV-001", "Serial No.": "SN-99812", "Acquisition Date": "2023-01-15", "Asset Description": "Desktop Workstation i7", "Accountable": "JUAN DELA CRUZ", "Category": "Capitalized Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 65000, "Remarks": "Good working condition"},
+      {"Property No.": "XV-002", "Serial No.": "SN-44102", "Acquisition Date": "2023-03-20", "Asset Description": "Epson L3210 Printer", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 11500, "Remarks": "Needs printhead replacement"},
+      {"Property No.": "XV-003", "Serial No.": "SN-88123", "Acquisition Date": "2024-02-10", "Asset Description": "Executive Office Desk", "Accountable": "PEDRO PASCUAL", "Category": "Semi-Expendable Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 18500, "Remarks": ""},
+      {"Property No.": "XV-004", "Serial No.": "SN-10293", "Acquisition Date": "2024-05-12", "Asset Description": "Heavy Duty Paper Shredder", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 8500, "Remarks": ""},
+      {"Property No.": "XV-005", "Serial No.": "SN-77211", "Acquisition Date": "2024-06-01", "Asset Description": "Heavy Duty Photocopier Bizhub", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 145000, "Remarks": "Regular maintenance maintained"},
+      {"Property No.": "XV-006", "Serial No.": "SN-33921", "Acquisition Date": "2024-07-15", "Asset Description": "Air Conditioner 2.0 HP Inverter", "Accountable": "CARMELITA TINGDAY", "Category": "Capitalized Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 52000, "Remarks": ""},
+      {"Property No.": "XV-007", "Serial No.": "SN-55210", "Acquisition Date": "2024-08-01", "Asset Description": "Conference Table 10-Seater", "Accountable": "HONORIO LALUGAN", "Category": "Semi-Expendable Asset", "Office": "SB", "Fund": "GF-PPEs", "Cost (PHP)": 35000, "Remarks": ""},
+      {"Property No.": "XV-008", "Serial No.": "SN-00291", "Acquisition Date": "2024-09-10", "Asset Description": "LCD Projector 4K", "Accountable": "GRETCHEN TINGDAY", "Category": "Capitalized Asset", "Office": "MPDO", "Fund": "20% DF", "Cost (PHP)": 58000, "Remarks": ""},
+      {"Property No.": "XV-009", "Serial No.": "SN-11029", "Acquisition Date": "2024-10-05", "Asset Description": "Motorcycle 150cc Utility", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "GF-PPEs", "Cost (PHP)": 98000, "Remarks": "Field vehicle"},
+      {"Property No.": "XV-010", "Serial No.": "SN-44912", "Acquisition Date": "2024-11-12", "Asset Description": "Ergonomic Mesh Chairs (Set of 5)", "Accountable": "QUEZADA SHERYLL", "Category": "Semi-Expendable Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 22500, "Remarks": ""},
+      {"Property No.": "XV-011", "Serial No.": "SN-88201", "Acquisition Date": "2025-01-10", "Asset Description": "Starlink Satellite Internet Kit", "Accountable": "GINA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 28000, "Remarks": "Installed at roof deck"},
+      {"Property No.": "XV-012", "Serial No.": "SN-33019", "Acquisition Date": "2025-02-14", "Asset Description": "UPS 1500VA Backup Power", "Accountable": "RAQUEL THOMPSON", "Category": "Semi-Expendable Asset", "Office": "ACCOUNTING", "Fund": "GF-PPEs", "Cost (PHP)": 9500, "Remarks": ""},
+      {"Property No.": "XV-013", "Serial No.": "SN-99102", "Acquisition Date": "2025-03-01", "Asset Description": "4Kw Gasoline Generator Unit", "Accountable": "KRIZA TINGDAY", "Category": "Capitalized Asset", "Office": "MDRRMO", "Fund": "5% LDRRM", "Cost (PHP)": 75000, "Remarks": "Standby rescue unit"},
+      {"Property No.": "XV-014", "Serial No.": "SN-66512", "Acquisition Date": "2025-03-15", "Asset Description": "DSLR Camera System for Info", "Accountable": "KIMBERLYN QUEZADA", "Category": "Capitalized Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 62000, "Remarks": ""},
+      {"Property No.": "XV-015", "Serial No.": "SN-12903", "Acquisition Date": "2025-04-02", "Asset Description": "Filing Cabinet 4-Drawer Steel", "Accountable": "JUAN DELA CRUZ", "Category": "Semi-Expendable Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 12000, "Remarks": ""},
+      {"Property No.": "XV-016", "Serial No.": "SN-77192", "Acquisition Date": "2025-05-10", "Asset Description": "Water Dispenser Hot/Cold", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 7800, "Remarks": ""},
+      {"Property No.": "XV-017", "Serial No.": "SN-88231", "Acquisition Date": "2025-06-01", "Asset Description": "Public Address System Speakers", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 89000, "Remarks": "Used for public functions"},
+      {"Property No.": "XV-018", "Serial No.": "SN-33102", "Acquisition Date": "2025-06-20", "Asset Description": "Biometric Attendance Scanner", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 15500, "Remarks": ""},
+      {"Property No.": "XV-019", "Serial No.": "SN-00129", "Acquisition Date": "2025-07-05", "Asset Description": "Digital Vault Heavy Duty", "Accountable": "QUEZADA SHERYLL", "Category": "Capitalized Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 54000, "Remarks": "Vault room level 1"},
+      {"Property No.": "XV-020", "Serial No.": "SN-44192", "Acquisition Date": "2025-08-12", "Asset Description": "Drone Unit for Agricultural Mapping", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "20% DF", "Cost (PHP)": 125000, "Remarks": "Fully operational"}
     ];
 
     let rawAssetData = [];
     let filteredAssetData = [];
     let selectedRemarksIdx = null;
     
+    // Pagination Variables
     let currentPage = 1;
     let rowsPerPage = 10;
 
@@ -694,9 +759,12 @@
         const cost = parseCurrency(item["Cost (PHP)"]);
         const capitalized = isCapitalized(cost, item["Category"]);
         
-        const salvage = parseCurrency(item["Salvage (PHP)"]) || (cost * 0.05);
-        const life = item["Useful Life"] || '5 yrs';
-        const bookVal = parseCurrency(item["Book Value (PHP)"]) || salvage;
+        // Automated COA calculations for each rendered item
+        const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
+        
+        const salvage = item["Salvage (PHP)"] ? parseCurrency(item["Salvage (PHP)"]) : coa.salvage;
+        const life = item["Useful Life"] || coa.lifeStr;
+        const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
         
         const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
 
@@ -805,7 +873,12 @@
     function calculateMetrics(data) {
       document.getElementById('stat-total-items').innerText = `${data.length} Items`;
       const totalCost = data.reduce((acc, curr) => acc + parseCurrency(curr["Cost (PHP)"]), 0);
-      const totalBook = data.reduce((acc, curr) => acc + parseCurrency(curr["Book Value (PHP)"]), 0);
+      
+      const totalBook = data.reduce((acc, curr) => {
+        if (curr["Book Value (PHP)"] !== undefined) return acc + parseCurrency(curr["Book Value (PHP)"]);
+        const computed = computeCOARulesForAsset(parseCurrency(curr["Cost (PHP)"]), curr["Category"], curr["Acquisition Date"]);
+        return acc + computed.bookValue;
+      }, 0);
 
       document.getElementById('stat-total-cost').innerText = `₱${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -815,52 +888,39 @@
       const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
       const catSelect = document.getElementById('add-category');
       catSelect.value = costVal >= 50000 ? "Capitalized Asset" : "Semi-Expendable Asset";
+      computeCOARules();
     }
 
-    /* UPDATED & FIXED FORM SUBMISSION */
     async function submitNewAsset(e) {
       e.preventDefault();
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.innerText = "Saving...";
       submitBtn.disabled = true;
 
-      // Payload matching Apps Script key variables
-      const payload = {
-        propertyNo: document.getElementById('add-prop').value,
-        serialNo: document.getElementById('add-serial').value || 'N/A',
-        acquisitionDate: formatDateOnly(document.getElementById('add-date').value),
-        assetDescription: document.getElementById('add-desc').value,
-        accountable: document.getElementById('add-accountable').value || 'N/A',
-        category: document.getElementById('add-category').value,
-        office: document.getElementById('add-office').value,
-        fund: document.getElementById('add-fund').value,
-        cost: parseFloat(document.getElementById('add-cost').value) || 0,
-        salvage: parseFloat(document.getElementById('add-salvage').value) || 0,
-        usefulLife: document.getElementById('add-life').value,
-        bookValue: parseFloat(document.getElementById('add-salvage').value) || 0,
-        status: document.getElementById('add-status').value,
-        remarks: document.getElementById('add-remarks').value || ''
+      const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
+      const categoryVal = document.getElementById('add-category').value;
+      const acqDateVal = formatDateOnly(document.getElementById('add-date').value);
+      
+      const computed = computeCOARulesForAsset(costVal, categoryVal, acqDateVal);
+
+      const newObj = {
+        "Property No.": document.getElementById('add-prop').value,
+        "Serial No.": document.getElementById('add-serial').value,
+        "Acquisition Date": acqDateVal,
+        "Asset Description": document.getElementById('add-desc').value,
+        "Accountable": document.getElementById('add-accountable').value,
+        "Category": categoryVal,
+        "Office": document.getElementById('add-office').value,
+        "Fund": document.getElementById('add-fund').value,
+        "Cost (PHP)": costVal,
+        "Salvage (PHP)": computed.salvage,
+        "Useful Life": computed.lifeStr,
+        "Book Value (PHP)": computed.bookValue,
+        "Status": document.getElementById('add-status').value,
+        "Remarks": document.getElementById('add-remarks').value
       };
 
-      // Object format matching local array keys
-      const localObj = {
-        "Property No.": payload.propertyNo,
-        "Serial No.": payload.serialNo,
-        "Acquisition Date": payload.acquisitionDate,
-        "Asset Description": payload.assetDescription,
-        "Accountable": payload.accountable,
-        "Category": payload.category,
-        "Office": payload.office,
-        "Fund": payload.fund,
-        "Cost (PHP)": payload.cost,
-        "Salvage (PHP)": payload.salvage,
-        "Useful Life": payload.usefulLife,
-        "Book Value (PHP)": payload.bookValue,
-        "Status": payload.status,
-        "Remarks": payload.remarks
-      };
-
-      rawAssetData.unshift(localObj);
+      rawAssetData.unshift(newObj);
       populateDynamicDropdowns(rawAssetData);
       filterTable();
 
@@ -868,13 +928,11 @@
         await fetch(API_URL, {
           method: "POST",
           mode: "no-cors",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(payload)
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newObj)
         });
-        alert("Asset saved to Google Sheet!");
       } catch (err) {
         console.error("Error saving:", err);
-        alert("Failed to save asset. Please check server status.");
       } finally {
         submitBtn.innerText = "💾 Save to Sheet";
         submitBtn.disabled = false;
@@ -915,6 +973,7 @@
     function openAddModal() {
       document.getElementById('addModal').classList.remove('hidden');
       document.getElementById('addModal').classList.add('flex');
+      computeCOARules();
     }
 
     function closeAddModal() {
@@ -922,6 +981,7 @@
       document.getElementById('addModal').classList.remove('flex');
     }
 
+    /* Remarks Modal Logic */
     function openRemarksModal(index) {
       selectedRemarksIdx = index;
       const item = filteredAssetData[index];
@@ -948,27 +1008,33 @@
       }
     }
 
+    /* Export Functions */
     function exportToExcel() {
       if (!filteredAssetData || filteredAssetData.length === 0) {
         alert("No asset records available to export.");
         return;
       }
 
-      const excelData = filteredAssetData.map(item => ({
-        "Property No.": item["Property No."] || '',
-        "Serial No.": item["Serial No."] || '',
-        "Acquisition Date": formatDateOnly(item["Acquisition Date"]),
-        "Asset Description": item["Asset Description"] || '',
-        "Accountable": item["Accountable"] || '',
-        "Office": item["Office"] || '',
-        "Fund": item["Fund"] || '',
-        "Cost (PHP)": parseCurrency(item["Cost (PHP)"]),
-        "Salvage (PHP)": parseCurrency(item["Salvage (PHP)"]),
-        "Useful Life": item["Useful Life"] || '',
-        "Book Value (PHP)": parseCurrency(item["Book Value (PHP)"]),
-        "Status": item["Status"] || '',
-        "Remarks": item["Remarks"] || ''
-      }));
+      const excelData = filteredAssetData.map(item => {
+        const cost = parseCurrency(item["Cost (PHP)"]);
+        const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
+        
+        return {
+          "Property No.": item["Property No."] || '',
+          "Serial No.": item["Serial No."] || '',
+          "Acquisition Date": formatDateOnly(item["Acquisition Date"]),
+          "Asset Description": item["Asset Description"] || '',
+          "Accountable": item["Accountable"] || '',
+          "Office": item["Office"] || '',
+          "Fund": item["Fund"] || '',
+          "Cost (PHP)": cost,
+          "Salvage (PHP)": item["Salvage (PHP)"] ? parseCurrency(item["Salvage (PHP)"]) : coa.salvage,
+          "Useful Life": item["Useful Life"] || coa.lifeStr,
+          "Book Value (PHP)": item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue,
+          "Status": item["Status"] || (coa.bookValue <= coa.salvage ? 'Fully Depreciated' : 'Active Asset'),
+          "Remarks": item["Remarks"] || ''
+        };
+      });
 
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       const workbook = XLSX.utils.book_new();
@@ -992,19 +1058,25 @@
 
       const headers = [["Prop No.", "Serial No.", "Acq. Date", "Description", "Accountable", "Office", "Fund", "Cost (PHP)", "Book Value", "Status", "Remarks"]];
       
-      const rows = filteredAssetData.map(item => [
-        item["Property No."] || '',
-        item["Serial No."] || '',
-        formatDateOnly(item["Acquisition Date"]),
-        item["Asset Description"] || '',
-        item["Accountable"] || '',
-        item["Office"] || '',
-        item["Fund"] || '',
-        `₱${parseCurrency(item["Cost (PHP)"]).toLocaleString('en-US', {minimumFractionDigits: 2})}`,
-        `₱${parseCurrency(item["Book Value (PHP)"]).toLocaleString('en-US', {minimumFractionDigits: 2})}`,
-        item["Status"] || '',
-        item["Remarks"] || ''
-      ]);
+      const rows = filteredAssetData.map(item => {
+        const cost = parseCurrency(item["Cost (PHP)"]);
+        const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
+        const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
+
+        return [
+          item["Property No."] || '',
+          item["Serial No."] || '',
+          formatDateOnly(item["Acquisition Date"]),
+          item["Asset Description"] || '',
+          item["Accountable"] || '',
+          item["Office"] || '',
+          item["Fund"] || '',
+          `₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
+          `₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
+          item["Status"] || (bookVal <= coa.salvage ? 'Fully Depreciated' : 'Active Asset'),
+          item["Remarks"] || ''
+        ];
+      });
 
       doc.autoTable({
         head: headers,
@@ -1018,6 +1090,7 @@
       doc.save(`LGU_TINEG_Asset_Inventory_${new Date().toISOString().slice(0, 10)}.pdf`);
     }
 
+    /* Sticker Modal Logic */
     function openStickerModal(index) {
       const item = filteredAssetData[index];
       const costVal = parseCurrency(item["Cost (PHP)"]);
@@ -1072,6 +1145,7 @@
       document.getElementById('stickerModal').classList.remove('flex');
     }
 
+    /* PAR Modal Logic */
     function openParModal(index) {
       const item = filteredAssetData[index];
       const costVal = parseCurrency(item["Cost (PHP)"]);
