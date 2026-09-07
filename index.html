@@ -1,265 +1,1223 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LGU Tineg - Local Asset Inventory System</title>
-  
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- FontAwesome Icons -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  
+  <title>LGU TINEG - Local Asset Inventory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Export Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body {
-      background-color: #f8f9fa;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .header-title {
-      color: #0d6efd;
-      font-weight: 700;
-    }
-    .card {
-      border: none;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    .table-img {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-    /* COA PAR & Sticker Modal Print Styles */
     @media print {
-      body * {
-        visibility: hidden;
+      body * { visibility: hidden !important; }
+      #printableArea, #printableArea *,
+      #printablePARArea, #printablePARArea * { visibility: visible !important; }
+      #printableArea, #printablePARArea {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 20px !important;
+        box-shadow: none !important;
+        border: none !important;
       }
-      #printContainer, #printContainer * {
-        visibility: visible;
-      }
-      #printContainer {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
+      .no-print { display: none !important; }
     }
-    .sticker-box {
-      border: 2px solid #000;
-      padding: 10px;
-      width: 300px;
-      font-size: 12px;
-      background: #fff;
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
   </style>
 </head>
-<body>
+<body class="bg-[#060911] text-slate-200 font-sans min-h-screen text-xs">
 
-  <!-- Navigation Bar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-    <div class="container-fluid">
-      <a class="navbar-brand font-weight-bold" href="#"><i class="fa-solid fa-boxes-stacked me-2"></i>LGU Tineg - Asset Inventory</a>
-    </div>
-  </nav>
+  <div class="flex min-h-screen">
+    <!-- Left Sidebar -->
+    <aside class="w-56 bg-[#0b0f19] p-4 border-r border-slate-800/60 no-print flex-shrink-0">
+      <div class="flex items-center gap-2.5 mb-8 px-1">
+        <div class="w-7 h-7 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded flex items-center justify-center font-bold text-sm">L</div>
+        <div>
+          <h1 class="text-xs font-bold text-white tracking-wide leading-tight">LGU TINEG</h1>
+          <p class="text-[10px] text-slate-400">Local Asset Inventory</p>
+        </div>
+      </div>
+      <button class="w-full text-left bg-emerald-950/40 text-emerald-400 px-3 py-2 rounded border border-emerald-500/30 font-medium text-xs flex items-center gap-2">
+        📄 General Ledger
+      </button>
+    </aside>
 
-  <div class="container-fluid px-4">
-    <div class="row">
+    <!-- Main Workspace -->
+    <main class="flex-1 p-6 no-print overflow-x-auto">
       
-      <!-- Asset Entry Form Column -->
-      <div class="col-lg-4 mb-4">
-        <div class="card p-4">
-          <h5 class="card-title mb-3 text-primary"><i class="fa-solid fa-plus-circle me-2"></i>Register New Asset</h5>
-          <form id="assetForm">
-            
-            <div class="mb-3">
-              <label for="assetName" class="form-label font-weight-bold">Asset / Item Description</label>
-              <input type="text" class="form-control" id="assetName" placeholder="e.g. Laptop, Vehicle, Desk" required>
-            </div>
+      <!-- Top Summary Cards -->
+      <div class="grid grid-cols-3 gap-5 mb-6">
+        <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
+          <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">TOTAL LEDGER ASSETS</p>
+          <h2 class="text-2xl font-black text-white" id="stat-total-items">0 Items</h2>
+        </div>
+        <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
+          <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">TOTAL HISTORIC COST</p>
+          <h2 class="text-2xl font-black text-emerald-400" id="stat-total-cost">₱0.00</h2>
+        </div>
+        <div class="bg-[#0b0f19] border border-slate-800/80 p-4 rounded-lg relative overflow-hidden">
+          <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">NET BOOK VALUE</p>
+          <h2 class="text-2xl font-black text-cyan-400" id="stat-book-value">₱0.00</h2>
+        </div>
+      </div>
 
-            <div class="mb-3">
-              <label for="acquisitionCost" class="form-label font-weight-bold">Acquisition Cost (₱)</label>
-              <input type="number" step="0.01" class="form-control" id="acquisitionCost" placeholder="0.00" required>
-              <small class="text-muted">COA Rule: ≥ ₱50,000 = Capitalized Asset | < ₱50,000 = Semi-Expendable</small>
-            </div>
+      <!-- Filters & Action Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2 flex-wrap">
+          <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search description, prop #..." class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs w-56 text-slate-200 focus:outline-none focus:border-emerald-500/50">
+          
+          <select id="filterCategory" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
+            <option value="">All Categories</option>
+            <option value="Capitalized">Capitalized Asset (₱50k & Above)</option>
+            <option value="Semi-Expendable">Semi-Expendable Asset (Below ₱50k)</option>
+          </select>
 
-            <div class="mb-3">
-              <label for="propertyNo" class="form-label font-weight-bold">Property Number</label>
-              <input type="text" class="form-control" id="propertyNo" placeholder="e.g. 2026-09-001">
-            </div>
+          <select id="filterSheets" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
+            <option value="">All Funds</option>
+          </select>
 
-            <div class="mb-3">
-              <label for="accountableOfficer" class="form-label font-weight-bold">Accountable Officer</label>
-              <input type="text" class="form-control" id="accountableOfficer" placeholder="Full Name">
-            </div>
+          <select id="filterOffice" onchange="filterTable()" class="bg-[#0b0f19] border border-slate-800 px-3 py-1.5 rounded text-xs text-slate-300 focus:outline-none">
+            <option value="">All Offices</option>
+          </select>
+        </div>
 
-            <!-- PHOTO UPLOAD INPUT -->
-            <div class="mb-3">
-              <label for="assetPhoto" class="form-label font-weight-bold"><i class="fa-solid fa-camera me-1"></i>Upload Asset Photo</label>
-              <input type="file" class="form-control" id="assetPhoto" accept="image/png, image/jpeg, image/jpg">
-              <small class="form-text text-muted">Uploaded photos are saved to Drive and linked in Google Sheets.</small>
-            </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="exportToExcel()" class="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 px-3 py-1.5 rounded font-medium flex items-center gap-1 transition-all">
+            📊 Export Excel
+          </button>
+          <button onclick="exportToPDF()" class="bg-rose-950/80 hover:bg-rose-900 border border-rose-700/60 text-rose-300 px-3 py-1.5 rounded font-medium flex items-center gap-1 transition-all">
+            📕 Export PDF
+          </button>
+          <button onclick="fetchAssetData()" class="bg-[#0b0f19] border border-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-800/50 font-medium">📥 Refresh Data</button>
+          <button onclick="openAddModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-1.5 rounded transition-all flex items-center gap-1">
+            <span>+</span> Add Asset
+          </button>
+        </div>
+      </div>
 
-            <button type="button" id="submitBtn" onclick="submitForm()" class="btn btn-primary w-100">
-              <i class="fa-solid fa-paper-plane me-1"></i> Submit Asset
+      <!-- Main Ledger Table -->
+      <div class="bg-[#0b0f19] border border-slate-800/80 rounded-lg overflow-x-auto shadow-2xl">
+        <table class="w-full text-left text-[11px] whitespace-nowrap">
+          <thead class="bg-[#0f1523] text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
+            <tr>
+              <th class="py-3 px-2 text-center">Photos</th>
+              <th class="py-3 px-2">Property No.</th>
+              <th class="py-3 px-2">Serial No.</th>
+              <th class="py-3 px-2">Acquisition Date</th>
+              <th class="py-3 px-3">Asset Description</th>
+              <th class="py-3 px-2">Accountable</th>
+              <th class="py-3 px-2">Category</th>
+              <th class="py-3 px-2">Office</th>
+              <th class="py-3 px-2">Fund</th>
+              <th class="py-3 px-2 text-right">Cost (PHP)</th>
+              <th class="py-3 px-2 text-right">Salvage (PHP)</th>
+              <th class="py-3 px-2 text-center">Useful Life</th>
+              <th class="py-3 px-2 text-right">Book Value (PHP)</th>
+              <th class="py-3 px-2 text-center">Status</th>
+              <th class="py-3 px-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="asset-table-body" class="divide-y divide-slate-800/50 text-slate-300">
+            <tr>
+              <td colspan="15" class="py-8 text-center text-slate-500">Loading asset records...</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- PAGINATION CONTROL BAR -->
+        <div class="bg-[#0f1523] px-4 py-3 border-t border-slate-800 flex items-center justify-between">
+          <div class="text-xs text-slate-400">
+            Showing <span id="page-start" class="font-bold text-slate-200">1</span> to <span id="page-end" class="font-bold text-slate-200">10</span> of <span id="page-total" class="font-bold text-slate-200">20</span> entries
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-slate-400 text-xs mr-2">Rows per page:
+              <select id="rowsPerPage" onchange="changeRowsPerPage()" class="bg-[#060911] border border-slate-800 text-slate-200 rounded px-2 py-1 ml-1 focus:outline-none">
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </select>
+            </label>
+            <button id="btnPrev" onclick="prevPage()" class="bg-[#060911] border border-slate-800 text-slate-300 px-3 py-1 rounded hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed font-medium">
+              ◀ Previous
             </button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Asset Inventory Table Column -->
-      <div class="col-lg-8">
-        <div class="card p-4">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="card-title text-primary"><i class="fa-solid fa-table me-2"></i>Property & Asset Registry</h5>
-            <button onclick="fetchData()" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-rotate me-1"></i>Refresh Data</button>
-          </div>
-
-          <div class="table-responsive">
-            <table class="table table-hover align-middle" id="inventoryTable">
-              <thead class="table-light">
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Cost</th>
-                  <th>Classification</th>
-                  <th>Photo</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="tableBody">
-                <tr>
-                  <td colspan="6" class="text-center text-muted py-4">Click "Refresh Data" to load assets...</td>
-                </tr>
-              </tbody>
-            </table>
+            <div id="pageNumbers" class="flex gap-1"></div>
+            <button id="btnNext" onclick="nextPage()" class="bg-[#060911] border border-slate-800 text-slate-300 px-3 py-1 rounded hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed font-medium">
+              Next ▶
+            </button>
           </div>
         </div>
       </div>
+    </main>
+  </div>
 
+  <!-- ADD ASSET MODAL -->
+  <div id="addModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print overflow-y-auto">
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-lg p-5 my-8">
+      <h3 class="text-emerald-400 font-bold text-sm mb-4">➕ ADD NEW ASSET</h3>
+      <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-2.5 text-xs">
+        
+        <!-- PHOTO UPLOAD INPUT FIELD -->
+        <div>
+          <label class="text-slate-400 text-[10px]">Asset Photo (Upload Image)</label>
+          <input type="file" id="add-photo-file" accept="image/*" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-300 text-xs focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">Property No.</label>
+            <input type="text" id="add-prop" required placeholder="XV-021" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-amber-400 font-bold">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">Serial No.</label>
+            <input type="text" id="add-serial" placeholder="N/A" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">Acquisition Date</label>
+            <input type="date" id="add-date" onchange="computeCOARules()" required class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">Category</label>
+            <select id="add-category" onchange="computeCOARules()" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+              <option value="Capitalized Asset">Capitalized Asset (₱50k & Above)</option>
+              <option value="Semi-Expendable Asset">Semi-Expendable Asset (Below ₱50k)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-slate-400 text-[10px]">Asset Description</label>
+          <input type="text" id="add-desc" required placeholder="Workstation Laptop" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">Accountable</label>
+            <input type="text" id="add-accountable" placeholder="N/A" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">Office</label>
+            <select id="add-office" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200 focus:outline-none focus:border-emerald-500">
+              <option value="MBO">MBO</option>
+              <option value="MAGO">MAGO</option>
+              <option value="MO">MO</option>
+              <option value="HRMO">HRMO</option>
+              <option value="GSO">GSO</option>
+              <option value="SB">SB</option>
+              <option value="MPDO">MPDO</option>
+              <option value="MAO">MAO</option>
+              <option value="MTO">MTO</option>
+              <option value="ACCOUNTING">ACCOUNTING</option>
+              <option value="MDRRMO">MDRRMO</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">Cost (PHP)</label>
+            <input type="number" step="0.01" id="add-cost" oninput="autoSelectCategoryByCost()" required placeholder="55000.00" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">Salvage (PHP) [5% COA]</label>
+            <input type="number" step="0.01" id="add-salvage" readonly placeholder="0.00" class="w-full bg-[#0b0f19] border border-slate-800 p-2 rounded mt-1 text-amber-400 font-mono cursor-not-allowed">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">Useful Life</label>
+            <input type="text" id="add-life" readonly value="5 yrs" class="w-full bg-[#0b0f19] border border-slate-800 p-2 rounded mt-1 text-emerald-400 font-mono cursor-not-allowed">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-slate-400 text-[10px]">Computed Book Value (PHP)</label>
+            <input type="number" step="0.01" id="add-bookvalue" readonly placeholder="0.00" class="w-full bg-[#0b0f19] border border-slate-800 p-2 rounded mt-1 text-cyan-400 font-bold font-mono cursor-not-allowed">
+          </div>
+          <div>
+            <label class="text-slate-400 text-[10px]">Fund</label>
+            <input type="text" id="add-fund" value="GF-PPEs" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          </div>
+        </div>
+        <div>
+          <label class="text-slate-400 text-[10px]">Status</label>
+          <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+            <option value="Active Asset">Active Asset</option>
+            <option value="Fully Depreciated">Fully Depreciated</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-slate-400 text-[10px]">Remarks</label>
+          <input type="text" id="add-remarks" placeholder="Condition, location, or unserviceable note..." class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+        </div>
+        <div class="mt-4 flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeAddModal()" class="bg-slate-800 text-slate-300 px-3 py-1.5 rounded">Cancel</button>
+          <button type="submit" id="submitBtn" class="bg-emerald-500 text-slate-950 font-bold px-3 py-1.5 rounded">💾 Save to Sheet</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Print Modal Container -->
-  <div id="printContainer" class="d-none"></div>
+  <!-- REMARKS MODAL -->
+  <div id="remarksModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-md p-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <h3 class="text-amber-400 font-bold text-sm flex items-center gap-1.5">📝 ASSET REMARKS</h3>
+        <button onclick="closeRemarksModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      
+      <div class="space-y-3">
+        <div>
+          <p class="text-[10px] text-slate-400 font-bold uppercase">Asset</p>
+          <p id="rem-asset-name" class="text-white font-bold text-xs">--</p>
+          <p id="rem-asset-prop" class="text-amber-400 font-mono text-[11px]">--</p>
+        </div>
 
-  <!-- External Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  
+        <div>
+          <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Remarks / Condition Notes</label>
+          <textarea id="rem-text-input" rows="4" placeholder="Enter remarks regarding item condition, location, maintenance status, etc..." class="w-full bg-[#060911] border border-slate-800 p-2.5 rounded text-xs text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+        </div>
+      </div>
+
+      <div class="mt-4 flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" onclick="closeRemarksModal()" class="bg-slate-800 text-slate-300 px-3 py-1.5 rounded text-xs">Cancel</button>
+        <button type="button" onclick="saveRemarks()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded text-xs">💾 Save Remarks</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPERTY INVENTORY STICKER MODAL -->
+  <div id="stickerModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      
+      <div class="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center bg-[#0b0f19]">
+        <h2 class="text-white font-bold text-base">Property Inventory Sticker</h2>
+        <button onclick="closeStickerModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <div class="p-6 grid grid-cols-12 gap-6 overflow-y-auto">
+        <div class="col-span-5 bg-[#080d19] border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">🔥 EDIT STICKER FIELDS</h3>
+          
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">MUNICIPALITY LOGO</label>
+            <div class="flex items-center gap-3">
+              <label class="cursor-pointer bg-[#111827] border border-slate-700 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded text-xs flex items-center gap-1.5 font-medium">
+                🏛️ Upload Logo
+                <input type="file" id="logoInput" accept="image/*" onchange="handleLogoUpload(event)" class="hidden">
+              </label>
+              <button onclick="removeLogo()" class="text-rose-400 hover:text-rose-300 text-xs">Remove</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">DESCRIPTION</label>
+            <input type="text" id="st-desc" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">PROPERTY NO.</label>
+              <input type="text" id="st-prop" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-amber-400 font-bold focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">SERIAL NO.</label>
+              <input type="text" id="st-serial" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">COST</label>
+              <input type="text" id="st-cost" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">DATE ACQUIRED</label>
+              <input type="date" id="st-date" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ACCOUNTABLE</label>
+              <input type="text" id="st-accountable" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">INVENTORY DATE</label>
+              <input type="date" id="st-invdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">VALIDATED DATE</label>
+              <input type="date" id="st-valdate" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">PROPERTY OFFICER</label>
+              <input type="text" id="st-officer" value="ROBY MAY S TINONG" oninput="updateStickerPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
+          <div id="printableArea" class="bg-white text-slate-900 p-6 rounded border border-slate-300 w-[440px] shadow-2xl text-center">
+            
+            <!-- HEADER WITH LOGO -->
+            <div class="flex items-center justify-center gap-3 mb-1">
+              <img id="stickerLogo" src="" class="w-12 h-12 flex-shrink-0 hidden object-contain" alt="LGU Seal">
+              <div class="font-bold text-[11px] leading-tight text-slate-800 text-center">
+                Republic of the Philippines<br>
+                Cordillera Administrative Region<br>
+                Province of Abra<br>
+                <span class="text-xs font-black tracking-wide">MUNICIPALITY OF TINEG</span>
+              </div>
+            </div>
+
+            <div class="border-y-2 border-slate-900 font-black my-2 py-1 tracking-wider uppercase text-xs text-slate-900">
+              PROPERTY INVENTORY STICKER
+            </div>
+
+            <table class="w-full border-collapse border border-slate-300 text-left my-2 text-[11px]">
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold w-1/3 text-slate-700">Property Description:</td><td id="pv-st-desc" class="p-1.5 font-black uppercase text-slate-900">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Property Number:</td><td id="pv-st-prop" class="p-1.5 font-bold text-slate-900">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Serial Number:</td><td id="pv-st-serial" class="p-1.5 text-slate-800">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Acquisition Cost:</td><td id="pv-st-cost" class="p-1.5 text-slate-800">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Acquisition Date:</td><td id="pv-st-date" class="p-1.5 text-slate-800">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Accountable:</td><td id="pv-st-accountable" class="p-1.5 font-bold uppercase text-slate-900">--</td></tr>
+              <tr class="border-b border-slate-300"><td class="p-1.5 font-bold text-slate-700">Inventory Date:</td><td id="pv-st-invdate" class="p-1.5 text-slate-800">--</td></tr>
+              <tr>
+                <td class="p-1.5 font-bold text-slate-700 align-bottom">Validated Date:</td>
+                <td class="p-1.5 pt-6 text-center">
+                  <div id="pv-st-valdate" class="text-[10px] text-slate-600 mb-2"></div>
+                  <div class="border-t border-slate-800 pt-0.5">
+                    <p id="pv-st-officer" class="font-bold text-[11px] uppercase leading-none">ROBY MAY S TINONG</p>
+                    <p class="text-[9px] text-slate-500 leading-tight">Property Officer</p>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <div class="mt-3">
+              <p class="text-[10px] text-red-600 font-bold uppercase tracking-tight">NOTE PLEASE DO NOT REMOVE!</p>
+              <p class="text-[8px] text-slate-500">Unauthorized removal or tampering will be subject to disciplinary action.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-slate-800/80 bg-[#0b0f19] flex justify-end gap-3">
+        <button onclick="closeStickerModal()" class="bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium px-5 py-2 rounded-lg text-xs">Close</button>
+        <button onclick="window.print()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
+          🖨️ Print Sticker
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPERTY ACKNOWLEDGMENT RECEIPT (PAR) MODAL -->
+  <div id="parModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      
+      <div class="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center bg-[#0b0f19]">
+        <h2 class="text-white font-bold text-base">PROPERTY ACKNOWLEDGMENT RECEIPT (PAR) - COA Appendix 71</h2>
+        <button onclick="closeParModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <div class="p-6 grid grid-cols-12 gap-6 overflow-y-auto">
+        <div class="col-span-5 bg-[#080d19] border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <h3 class="text-cyan-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">✍️ EDIT PAR DETAILS</h3>
+          
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">ENTITY NAME</label>
+            <input type="text" id="par-entity" value="MUNICIPALITY OF TINEG" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">FUND CLUSTER</label>
+            <input type="text" id="par-fund" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">PAR NO.</label>
+            <input type="text" id="par-no" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-amber-400 font-bold focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">QUANTITY</label>
+              <input type="text" id="par-qty" value="1" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">UNIT</label>
+              <input type="text" id="par-unit" value="unit" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (NAME)</label>
+              <input type="text" id="par-issuer" value="ROBY MAY S TINONG" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (OFFICE/POSITION)</label>
+              <input type="text" id="par-issuer-desig" value="Property Officer / Supply Officer" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (NAME)</label>
+              <input type="text" id="par-receiver" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (OFFICE/POSITION)</label>
+              <input type="text" id="par-receiver-desig" value="Administrative Officer" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
+          <div id="printablePARArea" class="bg-white text-slate-900 p-8 rounded border border-slate-300 w-[580px] shadow-2xl relative">
+            
+            <div class="text-right text-[10px] italic font-serif text-slate-600 mb-2">Appendix 71</div>
+
+            <div class="text-center mb-6">
+              <h2 class="text-sm font-black tracking-wide text-slate-900 uppercase">PROPERTY ACKNOWLEDGMENT RECEIPT</h2>
+            </div>
+
+            <div class="space-y-1 text-xs text-slate-800 mb-4">
+              <div class="flex items-end">
+                <span class="font-bold">Entity Name:</span>
+                <span id="pv-par-entity" class="border-b border-slate-800 flex-1 ml-2 px-1 font-semibold">MUNICIPALITY OF TINEG</span>
+              </div>
+              <div class="flex items-end justify-between">
+                <div class="flex items-end flex-1 mr-4">
+                  <span class="font-bold">Fund Cluster:</span>
+                  <span id="pv-par-fund" class="border-b border-slate-800 flex-1 ml-2 px-1">GF-PPEs</span>
+                </div>
+                <div class="flex items-end w-48">
+                  <span class="font-bold">PAR No.:</span>
+                  <span id="pv-par-no" class="border-b border-slate-800 flex-1 ml-2 px-1 font-mono font-bold text-slate-900">--</span>
+                </div>
+              </div>
+            </div>
+
+            <table class="w-full border-collapse border border-slate-800 text-center text-[11px]">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-800 text-slate-900 font-bold">
+                  <th class="border border-slate-800 p-2 w-14">Quantity</th>
+                  <th class="border border-slate-800 p-2 w-14">Unit</th>
+                  <th class="border border-slate-800 p-2 text-center">Description</th>
+                  <th class="border border-slate-800 p-2 w-24">Property Number</th>
+                  <th class="border border-slate-800 p-2 w-20">Date Acquired</th>
+                  <th class="border border-slate-800 p-2 w-24">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="h-40 align-top">
+                  <td id="pv-par-qty" class="border border-slate-800 p-2 font-bold">1</td>
+                  <td id="pv-par-unit" class="border border-slate-800 p-2">unit</td>
+                  <td class="border border-slate-800 p-2 text-left">
+                    <p id="pv-par-desc" class="font-bold uppercase text-slate-900">--</p>
+                    <p class="text-[10px] text-slate-600 mt-1">SN: <span id="pv-par-serial">--</span></p>
+                    <p class="text-[10px] text-slate-600">Remarks: <span id="pv-par-remarks">Active Asset</span></p>
+                  </td>
+                  <td id="pv-par-prop" class="border border-slate-800 p-2 font-mono text-slate-800">--</td>
+                  <td id="pv-par-acqdate" class="border border-slate-800 p-2">--</td>
+                  <td id="pv-par-amount" class="border border-slate-800 p-2 font-bold text-slate-900">--</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="grid grid-cols-2 border-x border-b border-slate-800 text-xs p-3 pt-6 gap-6">
+              <div>
+                <p class="font-bold text-slate-800 mb-8">Received by:</p>
+                <div class="text-center">
+                  <p id="pv-par-receiver" class="font-bold text-xs uppercase text-slate-900 border-b border-slate-800 pb-0.5">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Signature over Printed Name of End User</p>
+                  
+                  <p id="pv-par-receiver-desig" class="font-semibold text-xs border-b border-slate-800 pb-0.5 mt-4">Administrative Officer</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Position/Office</p>
+                  
+                  <p id="pv-par-rec-date" class="border-b border-slate-800 pb-0.5 mt-4 text-xs">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Date</p>
+                </div>
+              </div>
+
+              <div>
+                <p class="font-bold text-slate-800 mb-8">Issued by:</p>
+                <div class="text-center">
+                  <p id="pv-par-issuer" class="font-bold text-xs uppercase text-slate-900 border-b border-slate-800 pb-0.5">ROBY MAY S TINONG</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Signature over Printed Name of Supply and/or Property Custodian</p>
+                  
+                  <p id="pv-par-issuer-desig" class="font-semibold text-xs border-b border-slate-800 pb-0.5 mt-4">Property Officer / Supply Officer</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Position/Office</p>
+                  
+                  <p id="pv-par-iss-date" class="border-b border-slate-800 pb-0.5 mt-4 text-xs">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Date</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-slate-800/80 bg-[#0b0f19] flex justify-end gap-3">
+        <button onclick="closeParModal()" class="bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium px-5 py-2 rounded-lg text-xs">Close</button>
+        <button onclick="window.print()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
+          🖨️ Print PAR Form
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Configured Google Apps Script Web App Endpoint URL
-    const API_URL = "https://script.google.com/macros/s/AKfycby1G8wFhXfw3vYorNMJJhkSOF3hffXZz0lnjQG5eGsp4RaHXZVsUXXYNLP0f7M0w3Dc8w/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyAvVgeRjSATlq8x3uEXGY_6o_EOFiMwHCMYTu5I7_nimEPKwbaI9iBiKNT332Nrfq32g/exec";
+    
+    function formatDateOnly(dateStr) {
+      if (!dateStr || dateStr === 'N/A') return 'N/A';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr.split('T')[0];
+      return d.toISOString().split('T')[0];
+    }
 
-    // Helper: Convert File Object to Base64 String
-    function getBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
+    /* --- COA COMPUTATION HELPER FUNCTIONS --- */
+    function computeCOARulesForAsset(cost, categoryStr, acqDateStr) {
+      const isSemi = (categoryStr && categoryStr.toLowerCase().includes('semi')) || cost < 50000;
+      
+      // COA Rule: Residual / Salvage Value is fixed at 5% of Acquisition Cost
+      const salvage = cost * 0.05;
+      
+      // COA Standard Useful Life: 3 years for Semi-Expendable, 5 years for Capitalized PPE
+      const yearsVal = isSemi ? 3 : 5;
+      const lifeStr = `${yearsVal} yrs`;
+      
+      // Straight-Line Depreciation Computation
+      let bookValue = salvage;
+      if (acqDateStr && acqDateStr !== 'N/A') {
+        const acqDate = new Date(acqDateStr);
+        const now = new Date();
+        
+        if (!isNaN(acqDate.getTime())) {
+          // Calculate elapsed months since acquisition
+          const monthsElapsed = (now.getFullYear() - acqDate.getFullYear()) * 12 + (now.getMonth() - acqDate.getMonth());
+          const totalMonths = yearsVal * 12;
+          
+          if (monthsElapsed <= 0) {
+            bookValue = cost;
+          } else if (monthsElapsed >= totalMonths) {
+            bookValue = salvage; // Fully depreciated down to salvage value
+          } else {
+            const depreciableAmount = cost - salvage;
+            const monthlyDepreciation = depreciableAmount / totalMonths;
+            bookValue = cost - (monthlyDepreciation * monthsElapsed);
+          }
+        }
+      } else {
+        bookValue = salvage;
+      }
+
+      return { salvage, lifeStr, bookValue, yearsVal };
+    }
+
+    function computeCOARules() {
+      const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
+      const catVal = document.getElementById('add-category').value;
+      const dateVal = document.getElementById('add-date').value;
+
+      const computed = computeCOARulesForAsset(costVal, catVal, dateVal);
+
+      document.getElementById('add-salvage').value = computed.salvage.toFixed(2);
+      document.getElementById('add-life').value = computed.lifeStr;
+      document.getElementById('add-bookvalue').value = computed.bookValue.toFixed(2);
+      
+      const statusSelect = document.getElementById('add-status');
+      if (computed.bookValue <= computed.salvage && costVal > 0) {
+        statusSelect.value = "Fully Depreciated";
+      } else {
+        statusSelect.value = "Active Asset";
+      }
+    }
+
+    // 20 Mock Data Entries
+    const mock20Assets = [
+      {"Property No.": "XV-001", "Serial No.": "SN-99812", "Acquisition Date": "2023-01-15", "Asset Description": "Desktop Workstation i7", "Accountable": "JUAN DELA CRUZ", "Category": "Capitalized Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 65000, "Remarks": "Good working condition"},
+      {"Property No.": "XV-002", "Serial No.": "SN-44102", "Acquisition Date": "2023-03-20", "Asset Description": "Epson L3210 Printer", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 11500, "Remarks": "Needs printhead replacement"},
+      {"Property No.": "XV-003", "Serial No.": "SN-88123", "Acquisition Date": "2024-02-10", "Asset Description": "Executive Office Desk", "Accountable": "PEDRO PASCUAL", "Category": "Semi-Expendable Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 18500, "Remarks": ""},
+      {"Property No.": "XV-004", "Serial No.": "SN-10293", "Acquisition Date": "2024-05-12", "Asset Description": "Heavy Duty Paper Shredder", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 8500, "Remarks": ""},
+      {"Property No.": "XV-005", "Serial No.": "SN-77211", "Acquisition Date": "2024-06-01", "Asset Description": "Heavy Duty Photocopier Bizhub", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 145000, "Remarks": "Regular maintenance maintained"},
+      {"Property No.": "XV-006", "Serial No.": "SN-33921", "Acquisition Date": "2024-07-15", "Asset Description": "Air Conditioner 2.0 HP Inverter", "Accountable": "CARMELITA TINGDAY", "Category": "Capitalized Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 52000, "Remarks": ""},
+      {"Property No.": "XV-007", "Serial No.": "SN-55210", "Acquisition Date": "2024-08-01", "Asset Description": "Conference Table 10-Seater", "Accountable": "HONORIO LALUGAN", "Category": "Semi-Expendable Asset", "Office": "SB", "Fund": "GF-PPEs", "Cost (PHP)": 35000, "Remarks": ""},
+      {"Property No.": "XV-008", "Serial No.": "SN-00291", "Acquisition Date": "2024-09-10", "Asset Description": "LCD Projector 4K", "Accountable": "GRETCHEN TINGDAY", "Category": "Capitalized Asset", "Office": "MPDO", "Fund": "20% DF", "Cost (PHP)": 58000, "Remarks": ""},
+      {"Property No.": "XV-009", "Serial No.": "SN-11029", "Acquisition Date": "2024-10-05", "Asset Description": "Motorcycle 150cc Utility", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "GF-PPEs", "Cost (PHP)": 98000, "Remarks": "Field vehicle"},
+      {"Property No.": "XV-010", "Serial No.": "SN-44912", "Acquisition Date": "2024-11-12", "Asset Description": "Ergonomic Mesh Chairs (Set of 5)", "Accountable": "QUEZADA SHERYLL", "Category": "Semi-Expendable Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 22500, "Remarks": ""},
+      {"Property No.": "XV-011", "Serial No.": "SN-88201", "Acquisition Date": "2025-01-10", "Asset Description": "Starlink Satellite Internet Kit", "Accountable": "GINA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 28000, "Remarks": "Installed at roof deck"},
+      {"Property No.": "XV-012", "Serial No.": "SN-33019", "Acquisition Date": "2025-02-14", "Asset Description": "UPS 1500VA Backup Power", "Accountable": "RAQUEL THOMPSON", "Category": "Semi-Expendable Asset", "Office": "ACCOUNTING", "Fund": "GF-PPEs", "Cost (PHP)": 9500, "Remarks": ""},
+      {"Property No.": "XV-013", "Serial No.": "SN-99102", "Acquisition Date": "2025-03-01", "Asset Description": "4Kw Gasoline Generator Unit", "Accountable": "KRIZA TINGDAY", "Category": "Capitalized Asset", "Office": "MDRRMO", "Fund": "5% LDRRM", "Cost (PHP)": 75000, "Remarks": "Standby rescue unit"},
+      {"Property No.": "XV-014", "Serial No.": "SN-66512", "Acquisition Date": "2025-03-15", "Asset Description": "DSLR Camera System for Info", "Accountable": "KIMBERLYN QUEZADA", "Category": "Capitalized Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 62000, "Remarks": ""},
+      {"Property No.": "XV-015", "Serial No.": "SN-12903", "Acquisition Date": "2025-04-02", "Asset Description": "Filing Cabinet 4-Drawer Steel", "Accountable": "JUAN DELA CRUZ", "Category": "Semi-Expendable Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 12000, "Remarks": ""},
+      {"Property No.": "XV-016", "Serial No.": "SN-77192", "Acquisition Date": "2025-05-10", "Asset Description": "Water Dispenser Hot/Cold", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 7800, "Remarks": ""},
+      {"Property No.": "XV-017", "Serial No.": "SN-88231", "Acquisition Date": "2025-06-01", "Asset Description": "Public Address System Speakers", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 89000, "Remarks": "Used for public functions"},
+      {"Property No.": "XV-018", "Serial No.": "SN-33102", "Acquisition Date": "2025-06-20", "Asset Description": "Biometric Attendance Scanner", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 15500, "Remarks": ""},
+      {"Property No.": "XV-019", "Serial No.": "SN-00129", "Acquisition Date": "2025-07-05", "Asset Description": "Digital Vault Heavy Duty", "Accountable": "QUEZADA SHERYLL", "Category": "Capitalized Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 54000, "Remarks": "Vault room level 1"},
+      {"Property No.": "XV-020", "Serial No.": "SN-44192", "Acquisition Date": "2025-08-12", "Asset Description": "Drone Unit for Agricultural Mapping", "Accountable": "CAROL BANGGAD", "Category": "Capitalized Asset", "Office": "MAO", "Fund": "20% DF", "Cost (PHP)": 125000, "Remarks": "Fully operational"}
+    ];
+
+    let rawAssetData = [];
+    let filteredAssetData = [];
+    let selectedRemarksIdx = null;
+    
+    // Pagination Variables
+    let currentPage = 1;
+    let rowsPerPage = 10;
+
+    function parseCurrency(val) {
+      if (val === undefined || val === null || val === '') return 0;
+      if (typeof val === 'number') return val;
+      const cleaned = String(val).replace(/[^0-9.-]+/g, "");
+      return parseFloat(cleaned) || 0;
+    }
+
+    function isCapitalized(cost, rawCategory) {
+      if (rawCategory && String(rawCategory).toLowerCase().includes("capitalized")) return true;
+      if (rawCategory && String(rawCategory).toLowerCase().includes("semi")) return false;
+      return cost >= 50000;
+    }
+
+    async function fetchAssetData() {
+      try {
+        const response = await fetch(API_URL);
+        const liveData = await response.json();
+        rawAssetData = liveData && liveData.length > 0 ? liveData : mock20Assets;
+      } catch (error) {
+        console.log("Using default 20 entries dataset.");
+        rawAssetData = mock20Assets;
+      }
+      
+      populateDynamicDropdowns(rawAssetData);
+      filterTable();
+    }
+
+    function populateDynamicDropdowns(data) {
+      const officeFilterSelect = document.getElementById('filterOffice');
+      const addOfficeSelect = document.getElementById('add-office');
+      const fundSelect = document.getElementById('filterSheets');
+
+      const offices = [...new Set(data.map(item => item["Office"]).filter(Boolean))].sort();
+      const funds = [...new Set(data.map(item => item["Fund"]).filter(Boolean))].sort();
+
+      officeFilterSelect.innerHTML = `<option value="">All Offices</option>`;
+      offices.forEach(office => {
+        const opt = document.createElement('option');
+        opt.value = office;
+        opt.textContent = office;
+        officeFilterSelect.appendChild(opt);
+      });
+
+      if (offices.length > 0) {
+        addOfficeSelect.innerHTML = '';
+        offices.forEach(office => {
+          const opt = document.createElement('option');
+          opt.value = office;
+          opt.textContent = office;
+          addOfficeSelect.appendChild(opt);
+        });
+      }
+
+      fundSelect.innerHTML = `<option value="">All Funds</option>`;
+      funds.forEach(fund => {
+        const opt = document.createElement('option');
+        opt.value = fund;
+        opt.textContent = fund;
+        fundSelect.appendChild(opt);
       });
     }
 
-    // Submit Form Handler with Base64 File Payload
-    async function submitForm() {
-      const submitBtn = document.getElementById('submitBtn');
-      const name = document.getElementById('assetName').value;
-      const cost = parseFloat(document.getElementById('acquisitionCost').value) || 0;
-      const propNo = document.getElementById('propertyNo').value;
-      const officer = document.getElementById('accountableOfficer').value;
-      const fileInput = document.getElementById('assetPhoto');
+    function renderTable() {
+      const tbody = document.getElementById('asset-table-body');
+      tbody.innerHTML = '';
 
-      if (!name || isNaN(cost)) {
-        alert("Please fill in required fields (Description and Acquisition Cost).");
+      if (!filteredAssetData || filteredAssetData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="15" class="py-8 text-center text-slate-500">No matching assets found.</td></tr>`;
+        updatePaginationInfo(0);
         return;
       }
 
-      // Determine classification according to COA rules (₱50,000 threshold)
-      const category = cost >= 50000 ? "Capitalized Asset" : "Semi-Expendable Asset";
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const endIndex = Math.min(startIndex + rowsPerPage, filteredAssetData.length);
+      const paginatedData = filteredAssetData.slice(startIndex, endIndex);
 
-      let fileData = null;
-      let fileName = "";
-      let mimeType = "";
+      paginatedData.forEach((item, pageIdx) => {
+        const globalIdx = startIndex + pageIdx;
+        const photoUrl = item["Photos"] || item["Photo"] || '';
+        const propNo = item["Property No."] || 'N/A';
+        const serialNo = item["Serial No."] || 'N/A';
+        const date = formatDateOnly(item["Acquisition Date"]);
+        const desc = item["Asset Description"] || 'N/A';
+        const accountable = item["Accountable"] || 'N/A';
+        const office = item["Office"] || 'N/A';
+        const fund = item["Fund"] || 'N/A';
+        const remarks = item["Remarks"] || '';
+        
+        const cost = parseCurrency(item["Cost (PHP)"]);
+        const capitalized = isCapitalized(cost, item["Category"]);
+        
+        // Automated COA calculations for each rendered item
+        const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
+        
+        const salvage = item["Salvage (PHP)"] ? parseCurrency(item["Salvage (PHP)"]) : coa.salvage;
+        const life = item["Useful Life"] || coa.lifeStr;
+        const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
+        
+        const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
 
-      // Process uploaded image if selected
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        fileData = await getBase64(file);
-        fileName = file.name;
-        mimeType = file.type;
+        const isDepreciated = String(status).toLowerCase().includes('fully');
+        const statusBadge = isDepreciated 
+          ? `<span class="bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Fully Depreciated</span>`
+          : `<span class="bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Active Asset</span>`;
+
+        const categoryBadge = capitalized
+          ? `<span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Capitalized (≥50k)</span>`
+          : `<span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Semi-Expendable (<50k)</span>`;
+
+        const photoCell = photoUrl 
+          ? `<a href="${photoUrl}" target="_blank"><img src="${photoUrl}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" /></a>`
+          : `<button onclick="openAddModal()" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto">📷 No Photo</button>`;
+
+        const remarksBtnStyle = remarks.trim() !== '' 
+          ? 'bg-amber-950 hover:bg-amber-900 text-amber-300 border-amber-800/80' 
+          : 'bg-slate-900 hover:bg-slate-800 text-slate-400 border-slate-800';
+
+        const row = document.createElement('tr');
+        row.className = "hover:bg-slate-800/30 transition-colors border-b border-slate-800/40";
+        row.innerHTML = `
+          <td class="py-2.5 px-2 text-center">${photoCell}</td>
+          <td class="py-2.5 px-2 font-mono font-bold text-amber-400">${propNo}</td>
+          <td class="py-2.5 px-2 font-mono text-slate-300">${serialNo}</td>
+          <td class="py-2.5 px-2 text-slate-300">${date}</td>
+          <td class="py-2.5 px-3 font-semibold text-white max-w-xs truncate">${desc}</td>
+          <td class="py-2.5 px-2 text-slate-300">${accountable}</td>
+          <td class="py-2.5 px-2">${categoryBadge}</td>
+          <td class="py-2.5 px-2"><span class="bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded text-[10px] font-bold">${office}</span></td>
+          <td class="py-2.5 px-2"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]">${fund}</span></td>
+          <td class="py-2.5 px-2 text-right font-mono text-slate-200">₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-slate-400">₱${salvage.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-center text-emerald-400 font-medium">${life}</td>
+          <td class="py-2.5 px-2 text-right font-mono text-cyan-400 font-bold">₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+          <td class="py-2.5 px-2 text-center">${statusBadge}</td>
+          <td class="py-2.5 px-3 text-center">
+            <div class="flex items-center justify-center gap-1">
+              <button onclick="openRemarksModal(${globalIdx})" class="${remarksBtnStyle} border px-2 py-0.5 rounded text-[10px]" title="${remarks || 'No remarks'}">💬 Remarks</button>
+              <button onclick="openParModal(${globalIdx})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]">📄 PAR</button>
+              <button onclick="openStickerModal(${globalIdx})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded text-[10px]">🏷️ Sticker</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      updatePaginationInfo(filteredAssetData.length);
+    }
+
+    function updatePaginationInfo(totalItems) {
+      const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
+      const start = totalItems === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+      const end = Math.min(currentPage * rowsPerPage, totalItems);
+
+      document.getElementById('page-start').innerText = start;
+      document.getElementById('page-end').innerText = end;
+      document.getElementById('page-total').innerText = totalItems;
+
+      document.getElementById('btnPrev').disabled = currentPage === 1;
+      document.getElementById('btnNext').disabled = currentPage === totalPages || totalPages === 0;
+
+      const pageNumbersContainer = document.getElementById('pageNumbers');
+      pageNumbersContainer.innerHTML = '';
+      
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i;
+        btn.onclick = () => goToPage(i);
+        btn.className = `px-2.5 py-1 rounded text-xs font-medium ${
+          i === currentPage 
+            ? 'bg-emerald-500 text-slate-950 font-bold' 
+            : 'bg-[#060911] border border-slate-800 text-slate-300 hover:bg-slate-800'
+        }`;
+        pageNumbersContainer.appendChild(btn);
       }
+    }
 
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Uploading...`;
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+      }
+    }
 
-      const payload = {
-        assetName: name,
-        acquisitionCost: cost,
-        category: category,
-        propertyNo: propNo,
-        accountableOfficer: officer,
-        fileData: fileData,
-        fileName: fileName,
-        mimeType: mimeType
-      };
+    function nextPage() {
+      const totalPages = Math.ceil(filteredAssetData.length / rowsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTable();
+      }
+    }
 
-      fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(response => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane me-1"></i> Submit Asset`;
+    function goToPage(page) {
+      currentPage = page;
+      renderTable();
+    }
 
-        if (response.result === "success") {
-          alert("Asset registered successfully!");
-          document.getElementById('assetForm').reset();
-          fetchData(); // Refresh table data
-        } else {
-          alert("Error: " + (response.error || "Failed to submit data."));
-        }
-      })
-      .catch(error => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane me-1"></i> Submit Asset`;
-        console.error("Submission error:", error);
-        alert("An error occurred during submission.");
+    function changeRowsPerPage() {
+      rowsPerPage = parseInt(document.getElementById('rowsPerPage').value);
+      currentPage = 1;
+      renderTable();
+    }
+
+    function calculateMetrics(data) {
+      document.getElementById('stat-total-items').innerText = `${data.length} Items`;
+      const totalCost = data.reduce((acc, curr) => acc + parseCurrency(curr["Cost (PHP)"]), 0);
+      
+      const totalBook = data.reduce((acc, curr) => {
+        if (curr["Book Value (PHP)"] !== undefined) return acc + parseCurrency(curr["Book Value (PHP)"]);
+        const computed = computeCOARulesForAsset(parseCurrency(curr["Cost (PHP)"]), curr["Category"], curr["Acquisition Date"]);
+        return acc + computed.bookValue;
+      }, 0);
+
+      document.getElementById('stat-total-cost').innerText = `₱${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('stat-book-value').innerText = `₱${totalBook.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    function autoSelectCategoryByCost() {
+      const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
+      const catSelect = document.getElementById('add-category');
+      catSelect.value = costVal >= 50000 ? "Capitalized Asset" : "Semi-Expendable Asset";
+      computeCOARules();
+    }
+
+    // HELPER: Convert File to Base64 String
+    function getFileBase64(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+          base64: reader.result.split(',')[1],
+          mimeType: file.type,
+          fileName: file.name
+        });
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
       });
     }
 
-    // Fetch and Populate Asset Table
-    function fetchData() {
-      const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading inventory...</td></tr>`;
+    async function submitNewAsset(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.innerText = "Uploading & Saving...";
+      submitBtn.disabled = true;
 
-      fetch(API_URL)
-        .then(res => res.json())
-        .then(data => {
-          if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No asset records found.</td></tr>`;
-            return;
-          }
+      try {
+        const fileInput = document.getElementById('add-photo-file');
+        const photoFile = fileInput.files[0];
+        let photoData = null;
 
-          tbody.innerHTML = "";
-          data.forEach(item => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${item.date || ''}</td>
-              <td><strong>${item.assetName || ''}</strong><br><small class="text-muted">Prop #${item.propertyNo || 'N/A'}</small></td>
-              <td>₱${parseFloat(item.acquisitionCost || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-              <td><span class="badge ${item.category === 'Capitalized Asset' ? 'bg-primary' : 'bg-info'}">${item.category || 'N/A'}</span></td>
-              <td>${item.photoUrl ? `<a href="${item.photoUrl}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-image"></i> View</a>` : '<span class="text-muted">No image</span>'}</td>
-              <td><button onclick="printSticker('${item.assetName}', '${item.propertyNo}')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-print"></i> Sticker</button></td>
-            `;
-            tbody.appendChild(tr);
-          });
-        })
-        .catch(err => {
-          tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Error loading data from Google Sheets.</td></tr>`;
-          console.error("Fetch error:", err);
+        if (photoFile) {
+          photoData = await getFileBase64(photoFile);
+        }
+
+        const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
+        const categoryVal = document.getElementById('add-category').value;
+        const acqDateVal = formatDateOnly(document.getElementById('add-date').value);
+        
+        const computed = computeCOARulesForAsset(costVal, categoryVal, acqDateVal);
+
+        const newObj = {
+          "Property No.": document.getElementById('add-prop').value,
+          "Serial No.": document.getElementById('add-serial').value,
+          "Acquisition Date": acqDateVal,
+          "Asset Description": document.getElementById('add-desc').value,
+          "Accountable": document.getElementById('add-accountable').value,
+          "Category": categoryVal,
+          "Office": document.getElementById('add-office').value,
+          "Fund": document.getElementById('add-fund').value,
+          "Cost (PHP)": costVal,
+          "Salvage (PHP)": computed.salvage,
+          "Useful Life": computed.lifeStr,
+          "Book Value (PHP)": computed.bookValue,
+          "Status": document.getElementById('add-status').value,
+          "Remarks": document.getElementById('add-remarks').value,
+          "PhotoData": photoData // Transmits Base64 data to Apps Script doPost
+        };
+
+        rawAssetData.unshift(newObj);
+        populateDynamicDropdowns(rawAssetData);
+        filterTable();
+
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newObj)
         });
+
+      } catch (err) {
+        console.error("Error saving asset:", err);
+      } finally {
+        submitBtn.innerText = "💾 Save to Sheet";
+        submitBtn.disabled = false;
+        document.getElementById('addAssetForm').reset();
+        closeAddModal();
+      }
     }
+
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const catFilter = document.getElementById('filterCategory').value;
+      const fundFilter = document.getElementById('filterSheets').value;
+      const officeFilter = document.getElementById('filterOffice').value;
+
+      filteredAssetData = rawAssetData.filter(item => {
+        const desc = String(item["Asset Description"] || '').toLowerCase();
+        const prop = String(item["Property No."] || '').toLowerCase();
+        const cost = parseCurrency(item["Cost (PHP)"]);
+        const capitalized = isCapitalized(cost, item["Category"]);
+        
+        const matchesQuery = desc.includes(q) || prop.includes(q);
+        
+        let matchesCat = true;
+        if (catFilter === 'Capitalized') matchesCat = capitalized;
+        else if (catFilter === 'Semi-Expendable') matchesCat = !capitalized;
+
+        const matchesFund = !fundFilter || String(item["Fund"] || '') === fundFilter;
+        const matchesOffice = !officeFilter || String(item["Office"] || '') === officeFilter;
+
+        return matchesQuery && matchesCat && matchesFund && matchesOffice;
+      });
+
+      currentPage = 1;
+      renderTable();
+      calculateMetrics(filteredAssetData);
+    }
+
+    function openAddModal() {
+      document.getElementById('addModal').classList.remove('hidden');
+      document.getElementById('addModal').classList.add('flex');
+      computeCOARules();
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.add('hidden');
+      document.getElementById('addModal').classList.remove('flex');
+    }
+
+    /* Remarks Modal Logic */
+    function openRemarksModal(index) {
+      selectedRemarksIdx = index;
+      const item = filteredAssetData[index];
+      document.getElementById('rem-asset-name').innerText = item["Asset Description"] || 'N/A';
+      document.getElementById('rem-asset-prop').innerText = item["Property No."] || 'N/A';
+      document.getElementById('rem-text-input').value = item["Remarks"] || '';
+
+      document.getElementById('remarksModal').classList.remove('hidden');
+      document.getElementById('remarksModal').classList.add('flex');
+    }
+
+    function closeRemarksModal() {
+      selectedRemarksIdx = null;
+      document.getElementById('remarksModal').classList.add('hidden');
+      document.getElementById('remarksModal').classList.remove('flex');
+    }
+
+    function saveRemarks() {
+      if (selectedRemarksIdx !== null && filteredAssetData[selectedRemarksIdx]) {
+        const updatedRemark = document.getElementById('rem-text-input').value;
+        filteredAssetData[selectedRemarksIdx]["Remarks"] = updatedRemark;
+        renderTable();
+        closeRemarksModal();
+      }
+    }
+
+    /* Export Functions */
+    function exportToExcel() {
+      if (!filteredAssetData || filteredAssetData.length === 0) {
+        alert("No asset records available to export.");
+        return;
+      }
+
+      const excelData = filteredAssetData.map(item => {
+        const cost = parseCurrency(item["Cost (PHP)"]);
+        const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
+        
+        return {
+          "Property No.": item["Property No."] || '',
+          "Serial No.": item["Serial No."] || '',
+          "Acquisition Date": formatDateOnly(item["Acquisition Date"]),
+          "Asset Description": item["Asset Description"] || '',
+          "Accountable": item["Accountable"] || '',
+          "Office": item["Office"] || '',
+          "Fund": item["Fund"] || '',
+          "Cost (PHP)": cost,
+          "Salvage (PHP)": item["Salvage (PHP)"] ? parseCurrency(item["Salvage (PHP)"]) : coa.salvage,
+          "Useful Life": item["Useful Life"] || coa.lifeStr,
+          "Book Value (PHP)": item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue,
+          "Status": item["Status"] || (coa.bookValue <= coa.salvage ? 'Fully Depreciated' : 'Active Asset'),
+          "Remarks": item["Remarks"] || ''
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Assets Ledger");
+      XLSX.writeFile(workbook, `LGU_TINEG_Asset_Inventory_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
+    function exportToPDF() {
+      if (!filteredAssetData || filteredAssetData.length === 0) {
+        alert("No asset records available to export.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('landscape', 'pt', 'a4');
+
+      doc.setFontSize(14);
+      doc.text("LGU TINEG - Local Asset Inventory Ledger", 40, 40);
+      doc.setFontSize(9);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()} | Total Items: ${filteredAssetData.length}`, 40, 55);
+
+      const headers = [["Prop No.", "Serial No.", "Acq. Date", "Description", "Accountable", "Office", "Fund", "Cost (PHP)", "Book Value", "Status", "Remarks"]];
+      
+      const rows = filteredAssetData.map(item => {
+        const cost = parseCurrency(item["Cost (PHP)"]);
+        const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
+        const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
+
+        return [
+          item["Property No."] || '',
+          item["Serial No."] || '',
+          formatDateOnly(item["Acquisition Date"]),
+          item["Asset Description"] || '',
+          item["Accountable"] || '',
+          item["Office"] || '',
+          item["Fund"] || '',
+          `₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
+          `₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
+          item["Status"] || (bookVal <= coa.salvage ? 'Fully Depreciated' : 'Active Asset'),
+          item["Remarks"] || ''
+        ];
+      });
+
+      doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 70,
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [15, 21, 35], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [245, 247, 250] }
+      });
+
+      doc.save(`LGU_TINEG_Asset_Inventory_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+
+    /* Sticker Modal Logic */
+    function openStickerModal(index) {
+      const item = filteredAssetData[index];
+      const costVal = parseCurrency(item["Cost (PHP)"]);
+
+      document.getElementById('st-desc').value = item["Asset Description"] || '';
+      document.getElementById('st-prop').value = item["Property No."] || '';
+      document.getElementById('st-serial').value = item["Serial No."] || 'N/A';
+      document.getElementById('st-cost').value = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('st-date').value = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('st-accountable').value = item["Accountable"] || '';
+      document.getElementById('st-invdate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('st-valdate').value = '';
+
+      updateStickerPreview();
+      document.getElementById('stickerModal').classList.remove('hidden');
+      document.getElementById('stickerModal').classList.add('flex');
+    }
+
+    function updateStickerPreview() {
+      document.getElementById('pv-st-desc').innerText = document.getElementById('st-desc').value;
+      document.getElementById('pv-st-prop').innerText = document.getElementById('st-prop').value;
+      document.getElementById('pv-st-serial').innerText = document.getElementById('st-serial').value;
+      document.getElementById('pv-st-cost').innerText = document.getElementById('st-cost').value;
+      document.getElementById('pv-st-date').innerText = formatDateOnly(document.getElementById('st-date').value);
+      document.getElementById('pv-st-accountable').innerText = document.getElementById('st-accountable').value;
+      document.getElementById('pv-st-invdate').innerText = formatDateOnly(document.getElementById('st-invdate').value);
+      document.getElementById('pv-st-valdate').innerText = formatDateOnly(document.getElementById('st-valdate').value);
+      document.getElementById('pv-st-officer').innerText = document.getElementById('st-officer').value;
+    }
+
+    function handleLogoUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const logoImg = document.getElementById('stickerLogo');
+          logoImg.src = e.target.result;
+          logoImg.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function removeLogo() {
+      const logoImg = document.getElementById('stickerLogo');
+      logoImg.classList.add('hidden');
+      document.getElementById('logoInput').value = '';
+    }
+
+    function closeStickerModal() {
+      document.getElementById('stickerModal').classList.add('hidden');
+      document.getElementById('stickerModal').classList.remove('flex');
+    }
+
+    /* PAR Modal Logic */
+    function openParModal(index) {
+      const item = filteredAssetData[index];
+      const costVal = parseCurrency(item["Cost (PHP)"]);
+
+      document.getElementById('par-fund').value = item["Fund"] || 'GF-PPEs';
+      document.getElementById('par-no').value = `PAR-${item["Property No."] || ''}`;
+      document.getElementById('par-receiver').value = item["Accountable"] || '';
+      
+      document.getElementById('pv-par-desc').innerText = item["Asset Description"] || '';
+      document.getElementById('pv-par-serial').innerText = item["Serial No."] || 'N/A';
+      document.getElementById('pv-par-remarks').innerText = item["Remarks"] || item["Status"] || 'Active Asset';
+      document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
+      document.getElementById('pv-par-acqdate').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-par-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-par-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      updateParPreview();
+      document.getElementById('parModal').classList.remove('hidden');
+      document.getElementById('parModal').classList.add('flex');
+    }
+
+    function updateParPreview() {
+      document.getElementById('pv-par-entity').innerText = document.getElementById('par-entity').value;
+      document.getElementById('pv-par-fund').innerText = document.getElementById('par-fund').value;
+      document.getElementById('pv-par-no').innerText = document.getElementById('par-no').value;
+      document.getElementById('pv-par-qty').innerText = document.getElementById('par-qty').value;
+      document.getElementById('pv-par-unit').innerText = document.getElementById('par-unit').value;
+      document.getElementById('pv-par-receiver').innerText = document.getElementById('par-receiver').value;
+      document.getElementById('pv-par-receiver-desig').innerText = document.getElementById('par-receiver-desig').value;
+      document.getElementById('pv-par-issuer').innerText = document.getElementById('par-issuer').value;
+      document.getElementById('pv-par-issuer-desig').innerText = document.getElementById('par-issuer-desig').value;
+    }
+
+    function closeParModal() {
+      document.getElementById('parModal').classList.add('hidden');
+      document.getElementById('parModal').classList.remove('flex');
+    }
+
+    fetchAssetData();
   </script>
 </body>
 </html>
