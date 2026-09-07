@@ -161,6 +161,10 @@
     <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-lg p-5">
       <h3 class="text-emerald-400 font-bold text-sm mb-4">➕ ADD NEW ASSET</h3>
       <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-2.5 text-xs">
+        <div>
+          <label class="text-slate-400 text-[10px]">Photo URL (Google Drive or Image Link)</label>
+          <input type="url" id="add-photo" placeholder="https://drive.google.com/file/d/..." class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+        </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-slate-400 text-[10px]">Property No.</label>
@@ -578,32 +582,38 @@
       return d.toISOString().split('T')[0];
     }
 
+    function formatDriveUrl(url) {
+      if (!url) return '';
+      const driveRegex = /\/file\/d\/([^\/]+)|\?id=([^\&]+)/;
+      const match = url.match(driveRegex);
+      if (match) {
+        const fileId = match[1] || match[2];
+        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      }
+      return url;
+    }
+
     /* --- COA COMPUTATION HELPER FUNCTIONS --- */
     function computeCOARulesForAsset(cost, categoryStr, acqDateStr) {
       const isSemi = (categoryStr && categoryStr.toLowerCase().includes('semi')) || cost < 50000;
       
-      // COA Rule: Residual / Salvage Value is fixed at 5% of Acquisition Cost
       const salvage = cost * 0.05;
-      
-      // COA Standard Useful Life: 3 years for Semi-Expendable, 5 years for Capitalized PPE
       const yearsVal = isSemi ? 3 : 5;
       const lifeStr = `${yearsVal} yrs`;
       
-      // Straight-Line Depreciation Computation
       let bookValue = salvage;
       if (acqDateStr && acqDateStr !== 'N/A') {
         const acqDate = new Date(acqDateStr);
         const now = new Date();
         
         if (!isNaN(acqDate.getTime())) {
-          // Calculate elapsed months since acquisition
           const monthsElapsed = (now.getFullYear() - acqDate.getFullYear()) * 12 + (now.getMonth() - acqDate.getMonth());
           const totalMonths = yearsVal * 12;
           
           if (monthsElapsed <= 0) {
             bookValue = cost;
           } else if (monthsElapsed >= totalMonths) {
-            bookValue = salvage; // Fully depreciated down to salvage value
+            bookValue = salvage;
           } else {
             const depreciableAmount = cost - salvage;
             const monthlyDepreciation = depreciableAmount / totalMonths;
@@ -636,7 +646,7 @@
       }
     }
 
-    // 20 Mock Data Entries
+    // Mock Data Entries
     const mock20Assets = [
       {"Property No.": "XV-001", "Serial No.": "SN-99812", "Acquisition Date": "2023-01-15", "Asset Description": "Desktop Workstation i7", "Accountable": "JUAN DELA CRUZ", "Category": "Capitalized Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 65000, "Remarks": "Good working condition"},
       {"Property No.": "XV-002", "Serial No.": "SN-44102", "Acquisition Date": "2023-03-20", "Asset Description": "Epson L3210 Printer", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 11500, "Remarks": "Needs printhead replacement"},
@@ -746,7 +756,7 @@
 
       paginatedData.forEach((item, pageIdx) => {
         const globalIdx = startIndex + pageIdx;
-        const photoUrl = item["Photos"] || '';
+        const photoUrl = formatDriveUrl(item["Photos"] || '');
         const propNo = item["Property No."] || 'N/A';
         const serialNo = item["Serial No."] || 'N/A';
         const date = formatDateOnly(item["Acquisition Date"]);
@@ -759,7 +769,6 @@
         const cost = parseCurrency(item["Cost (PHP)"]);
         const capitalized = isCapitalized(cost, item["Category"]);
         
-        // Automated COA calculations for each rendered item
         const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
         
         const salvage = item["Salvage (PHP)"] ? parseCurrency(item["Salvage (PHP)"]) : coa.salvage;
@@ -900,10 +909,12 @@
       const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
       const categoryVal = document.getElementById('add-category').value;
       const acqDateVal = formatDateOnly(document.getElementById('add-date').value);
+      const photoInput = document.getElementById('add-photo').value;
       
       const computed = computeCOARulesForAsset(costVal, categoryVal, acqDateVal);
 
       const newObj = {
+        "Photos": formatDriveUrl(photoInput),
         "Property No.": document.getElementById('add-prop').value,
         "Serial No.": document.getElementById('add-serial').value,
         "Acquisition Date": acqDateVal,
@@ -1020,6 +1031,7 @@
         const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
         
         return {
+          "Photos": item["Photos"] || '',
           "Property No.": item["Property No."] || '',
           "Serial No.": item["Serial No."] || '',
           "Acquisition Date": formatDateOnly(item["Acquisition Date"]),
