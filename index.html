@@ -17,8 +17,8 @@
         background: white !important;
       }
 
-      /* Hide both modals by default during print */
-      #stickerModal, #parModal {
+      /* Hide modals by default during print */
+      #stickerModal, #parModal, #icsModal {
         display: none !important;
       }
 
@@ -38,6 +38,14 @@
         padding: 0 !important;
       }
 
+      /* Only show ICS modal when printing ICS */
+      body.print-ics #icsModal {
+        display: block !important;
+        position: static !important;
+        background: none !important;
+        padding: 0 !important;
+      }
+
       /* Hide non-printable UI controls inside modals */
       .no-print, 
       #stickerModal > div > div:first-child,
@@ -45,7 +53,10 @@
       #stickerModal .col-span-5,
       #parModal > div > div:first-child,     
       #parModal > div > div:last-child,      
-      #parModal .col-span-5 {
+      #parModal .col-span-5,
+      #icsModal > div > div:first-child,     
+      #icsModal > div > div:last-child,      
+      #icsModal .col-span-5 {
         display: none !important;
       }
 
@@ -60,8 +71,13 @@
         visibility: visible !important;
       }
 
+      body.print-ics #printableICSArea,
+      body.print-ics #printableICSArea * {
+        visibility: visible !important;
+      }
+
       /* Target container reset for clean page printing */
-      #printableArea, #printablePARArea {
+      #printableArea, #printablePARArea, #printableICSArea {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
@@ -428,7 +444,6 @@
         <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
           <div id="printableArea" class="bg-white text-slate-900 p-6 rounded border border-slate-300 w-[440px] shadow-2xl text-center">
             
-            <!-- HEADER WITH LOGO -->
             <div class="flex items-center justify-center gap-3 mb-1">
               <img id="stickerLogo" src="" class="w-12 h-12 flex-shrink-0 hidden object-contain" alt="LGU Seal">
               <div class="font-bold text-[11px] leading-tight text-slate-800 text-center">
@@ -525,7 +540,7 @@
               <input type="text" id="par-issuer" value="ROBY MAY S TINONG" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
             </div>
             <div>
-              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (OFFICE/POSITION)</label>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (POSITION)</label>
               <input type="text" id="par-issuer-desig" value="Property Officer / Supply Officer" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
             </div>
           </div>
@@ -536,7 +551,7 @@
               <input type="text" id="par-receiver" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
             </div>
             <div>
-              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (OFFICE/POSITION)</label>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (POSITION)</label>
               <input type="text" id="par-receiver-desig" value="Administrative Officer" oninput="updateParPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-cyan-500">
             </div>
           </div>
@@ -638,23 +653,189 @@
     </div>
   </div>
 
+  <!-- INVENTORY CUSTODIAN SLIP (ICS) MODAL - COA Appendix 59 -->
+  <div id="icsModal" class="fixed inset-0 bg-[#080d1a]/95 hidden items-center justify-center p-4 z-50">
+    <div class="bg-[#0c1222] border border-slate-800/80 rounded-xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      
+      <div class="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center bg-[#0b0f19]">
+        <h2 class="text-white font-bold text-base">INVENTORY CUSTODIAN SLIP (ICS) - COA Appendix 59 (Semi-Expendable)</h2>
+        <button onclick="closeIcsModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <div class="p-6 grid grid-cols-12 gap-6 overflow-y-auto">
+        <div class="col-span-5 bg-[#080d19] border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">📋 EDIT ICS DETAILS</h3>
+          
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">ENTITY NAME</label>
+            <input type="text" id="ics-entity" value="MUNICIPALITY OF TINEG" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">FUND CLUSTER</label>
+            <input type="text" id="ics-fund" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 font-semibold block mb-1">ICS NO.</label>
+            <input type="text" id="ics-no" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">QUANTITY</label>
+              <input type="text" id="ics-qty" value="1" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">UNIT</label>
+              <input type="text" id="ics-unit" value="unit" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (NAME)</label>
+              <input type="text" id="ics-receiver" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">RECEIVED BY (POSITION)</label>
+              <input type="text" id="ics-receiver-desig" value="End-User" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (NAME)</label>
+              <input type="text" id="ics-issuer" value="ROBY MAY S TINONG" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 font-semibold block mb-1">ISSUED BY (POSITION)</label>
+              <input type="text" id="ics-issuer-desig" value="Property Officer / Supply Officer" oninput="updateIcsPreview()" class="w-full bg-[#111827] border border-slate-800 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-7 bg-[#111827] p-8 rounded-xl flex flex-col justify-center items-center">
+          <div id="printableICSArea" class="bg-white text-slate-900 p-8 rounded border border-slate-300 w-[580px] shadow-2xl relative">
+            
+            <div class="text-right text-[10px] italic font-serif text-slate-600 mb-2">Appendix 59</div>
+
+            <div class="text-center mb-6">
+              <h2 class="text-sm font-black tracking-wide text-slate-900 uppercase">INVENTORY CUSTODIAN SLIP</h2>
+            </div>
+
+            <div class="space-y-1 text-xs text-slate-800 mb-4">
+              <div class="flex items-end">
+                <span class="font-bold">Entity Name:</span>
+                <span id="pv-ics-entity" class="border-b border-slate-800 flex-1 ml-2 px-1 font-semibold">MUNICIPALITY OF TINEG</span>
+              </div>
+              <div class="flex items-end justify-between">
+                <div class="flex items-end flex-1 mr-4">
+                  <span class="font-bold">Fund Cluster:</span>
+                  <span id="pv-ics-fund" class="border-b border-slate-800 flex-1 ml-2 px-1">GF-PPEs</span>
+                </div>
+                <div class="flex items-end w-48">
+                  <span class="font-bold">ICS No.:</span>
+                  <span id="pv-ics-no" class="border-b border-slate-800 flex-1 ml-2 px-1 font-mono font-bold text-slate-900">--</span>
+                </div>
+              </div>
+            </div>
+
+            <table class="w-full border-collapse border border-slate-800 text-center text-[11px]">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-800 text-slate-900 font-bold">
+                  <th class="border border-slate-800 p-2 w-12">Quantity</th>
+                  <th class="border border-slate-800 p-2 w-12">Unit</th>
+                  <th class="border border-slate-800 p-2 w-20">Unit Cost</th>
+                  <th class="border border-slate-800 p-2 w-20">Total Cost</th>
+                  <th class="border border-slate-800 p-2 text-center">Description</th>
+                  <th class="border border-slate-800 p-2 w-20">Inventory Item No.</th>
+                  <th class="border border-slate-800 p-2 w-16">Estimated Useful Life</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="h-40 align-top">
+                  <td id="pv-ics-qty" class="border border-slate-800 p-2 font-bold">1</td>
+                  <td id="pv-ics-unit" class="border border-slate-800 p-2">unit</td>
+                  <td id="pv-ics-unitcost" class="border border-slate-800 p-2 font-mono">--</td>
+                  <td id="pv-ics-totalcost" class="border border-slate-800 p-2 font-bold font-mono text-slate-900">--</td>
+                  <td class="border border-slate-800 p-2 text-left">
+                    <p id="pv-ics-desc" class="font-bold uppercase text-slate-900">--</p>
+                    <p class="text-[10px] text-slate-600 mt-1">SN: <span id="pv-ics-serial">--</span></p>
+                    <p class="text-[10px] text-slate-600">Remarks: <span id="pv-ics-remarks">Active Asset</span></p>
+                  </td>
+                  <td id="pv-ics-prop" class="border border-slate-800 p-2 font-mono text-slate-800">--</td>
+                  <td id="pv-ics-life" class="border border-slate-800 p-2">3 yrs</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="grid grid-cols-2 border-x border-b border-slate-800 text-xs p-3 pt-6 gap-6">
+              <div>
+                <p class="font-bold text-slate-800 mb-8">Received by:</p>
+                <div class="text-center">
+                  <p id="pv-ics-receiver" class="font-bold text-xs uppercase text-slate-900 border-b border-slate-800 pb-0.5">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Signature over Printed Name of End User</p>
+                  
+                  <p id="pv-ics-receiver-desig" class="font-semibold text-xs border-b border-slate-800 pb-0.5 mt-4">End-User</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Position/Office</p>
+                  
+                  <p id="pv-ics-rec-date" class="border-b border-slate-800 pb-0.5 mt-4 text-xs">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Date</p>
+                </div>
+              </div>
+
+              <div>
+                <p class="font-bold text-slate-800 mb-8">Issued by:</p>
+                <div class="text-center">
+                  <p id="pv-ics-issuer" class="font-bold text-xs uppercase text-slate-900 border-b border-slate-800 pb-0.5">ROBY MAY S TINONG</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Signature over Printed Name of Supply and/or Property Custodian</p>
+                  
+                  <p id="pv-ics-issuer-desig" class="font-semibold text-xs border-b border-slate-800 pb-0.5 mt-4">Property Officer / Supply Officer</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Position/Office</p>
+                  
+                  <p id="pv-ics-iss-date" class="border-b border-slate-800 pb-0.5 mt-4 text-xs">--</p>
+                  <p class="text-[9px] text-slate-600 mt-0.5">Date</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-slate-800/80 bg-[#0b0f19] flex justify-end gap-3">
+        <button onclick="closeIcsModal()" class="bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium px-5 py-2 rounded-lg text-xs">Close</button>
+        <button onclick="printICS()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5">
+          🖨️ Print ICS Form
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyTnvMRzK_-0Xv_n0gJM1KoNT70tmYEGONSl7INsYfMlyMlldJUN0eWAtW5K0kplA3ylw/exec";
     
     function printSticker() {
       document.body.classList.add('print-sticker');
-      document.body.classList.remove('print-par');
+      document.body.classList.remove('print-par', 'print-ics');
       window.print();
     }
 
     function printPAR() {
       document.body.classList.add('print-par');
-      document.body.classList.remove('print-sticker');
+      document.body.classList.remove('print-sticker', 'print-ics');
+      window.print();
+    }
+
+    function printICS() {
+      document.body.classList.add('print-ics');
+      document.body.classList.remove('print-sticker', 'print-par');
       window.print();
     }
 
     window.addEventListener('afterprint', () => {
-      document.body.classList.remove('print-sticker', 'print-par');
+      document.body.classList.remove('print-sticker', 'print-par', 'print-ics');
     });
 
     function formatDateOnly(dateStr) {
@@ -664,7 +845,6 @@
       return d.toISOString().split('T')[0];
     }
 
-    // Event listener for direct photo file upload in the Add Asset form
     document.getElementById('add-photo').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
@@ -676,7 +856,6 @@
       }
     });
 
-    /* --- COA COMPUTATION HELPER FUNCTIONS --- */
     function computeCOARulesForAsset(cost, categoryStr, acqDateStr) {
       const isSemi = (categoryStr && categoryStr.toLowerCase().includes('semi')) || cost < 50000;
       
@@ -729,7 +908,6 @@
       }
     }
 
-    // Mock Data Entries
     const mock20Assets = [
       {"Property No.": "XV-001", "Serial No.": "SN-99812", "Acquisition Date": "2023-01-15", "Asset Description": "Desktop Workstation i7", "Accountable": "JUAN DELA CRUZ", "Category": "Capitalized Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 65000, "Remarks": "Good working condition"},
       {"Property No.": "XV-002", "Serial No.": "SN-44102", "Acquisition Date": "2023-03-20", "Asset Description": "Epson L3210 Printer", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 11500, "Remarks": "Needs printhead replacement"},
@@ -758,7 +936,6 @@
     let selectedRemarksIdx = null;
     let selectedPhotoIdx = null;
     
-    // Pagination Variables
     let currentPage = 1;
     let rowsPerPage = 10;
 
@@ -874,7 +1051,6 @@
           ? `<span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Capitalized (≥50k)</span>`
           : `<span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Semi-Expendable (<50k)</span>`;
 
-        // Clickable thumbnail view or upload trigger
         const photoCell = rawPhotoVal.trim() !== '' 
           ? `<button onclick="openPhotoViewModal(${globalIdx})" class="mx-auto block"><img src="${rawPhotoVal}" class="w-7 h-7 object-cover rounded border border-emerald-500/60 hover:scale-110 transition-transform mx-auto" title="Click to view full photo" /></button>`
           : `<button onclick="openPhotoUploadModal(${globalIdx})" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto transition-colors">📷 + Photo</button>`;
@@ -903,8 +1079,9 @@
           <td class="py-2.5 px-3 text-center">
             <div class="flex items-center justify-center gap-1">
               <button onclick="openRemarksModal(${globalIdx})" class="${remarksBtnStyle} border px-2 py-0.5 rounded text-[10px]" title="${remarks || 'No remarks'}">💬 Remarks</button>
-              <button onclick="openParModal(${globalIdx})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]">📄 PAR</button>
-              <button onclick="openStickerModal(${globalIdx})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded text-[10px]">🏷️ Sticker</button>
+              <button onclick="openParModal(${globalIdx})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 px-2 py-0.5 rounded text-[10px]" title="Property Acknowledgment Receipt">📄 PAR</button>
+              <button onclick="openIcsModal(${globalIdx})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded text-[10px]" title="Inventory Custodian Slip (Semi-Expendable)">📄 ICS</button>
+              <button onclick="openStickerModal(${globalIdx})" class="bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-800/80 px-2 py-0.5 rounded text-[10px]">🏷️ Sticker</button>
             </div>
           </td>
         `;
@@ -920,7 +1097,6 @@
       }
     }
 
-    // Photo Modal & Upload Handlers
     function openPhotoViewModal(index) {
       selectedPhotoIdx = index;
       const item = filteredAssetData[index];
@@ -1124,7 +1300,6 @@
       document.getElementById('addModal').classList.remove('flex');
     }
 
-    /* Remarks Modal Logic */
     function openRemarksModal(index) {
       selectedRemarksIdx = index;
       const item = filteredAssetData[index];
@@ -1151,7 +1326,6 @@
       }
     }
 
-    /* Export Functions */
     function exportToExcel() {
       if (!filteredAssetData || filteredAssetData.length === 0) {
         alert("No asset records available to export.");
@@ -1231,7 +1405,6 @@
         alternateRowStyles: { fillColor: [245, 247, 250] }
       });
 
-      // --- ANNEX: COMPREHENSIVE ASSET PHOTO DOCUMENTATION ---
       const itemsWithPhotos = filteredAssetData.filter(item => item["Photos"] && item["Photos"].trim() !== '');
       if (itemsWithPhotos.length > 0) {
         doc.addPage();
@@ -1242,7 +1415,6 @@
 
         let startY = 75;
         itemsWithPhotos.forEach((item, index) => {
-          // Check if we need a new page for photo items to prevent clipping
           if (startY > 450) {
             doc.addPage();
             startY = 40;
@@ -1259,12 +1431,10 @@
 
           try {
             const imgData = item["Photos"];
-            // Determine format from base64 string
             let format = 'JPEG';
             if (imgData.includes('image/png')) format = 'PNG';
             else if (imgData.includes('image/webp')) format = 'WEBP';
 
-            // Draw image preview in PDF (width: 140 pt, height: 105 pt maintaining aspect ratio roughly)
             doc.addImage(imgData, format, 40, startY + 8, 140, 105);
           } catch (err) {
             doc.setFontSize(8);
@@ -1279,7 +1449,6 @@
       doc.save(`LGU_TINEG_Asset_Inventory_${new Date().toISOString().slice(0, 10)}.pdf`);
     }
 
-    /* Sticker Modal Logic */
     function openStickerModal(index) {
       const item = filteredAssetData[index];
       const costVal = parseCurrency(item["Cost (PHP)"]);
@@ -1334,7 +1503,6 @@
       document.getElementById('stickerModal').classList.remove('flex');
     }
 
-    /* PAR Modal Logic */
     function openParModal(index) {
       const item = filteredAssetData[index];
       const costVal = parseCurrency(item["Cost (PHP)"]);
@@ -1372,6 +1540,48 @@
     function closeParModal() {
       document.getElementById('parModal').classList.add('hidden');
       document.getElementById('parModal').classList.remove('flex');
+    }
+
+    /* ICS Modal Logic (Semi-Expendable Appendix 59) */
+    function openIcsModal(index) {
+      const item = filteredAssetData[index];
+      const costVal = parseCurrency(item["Cost (PHP)"]);
+      const coa = computeCOARulesForAsset(costVal, item["Category"], item["Acquisition Date"]);
+
+      document.getElementById('ics-fund').value = item["Fund"] || 'GF-PPEs';
+      document.getElementById('ics-no').value = `ICS-${item["Property No."] || ''}`;
+      document.getElementById('ics-receiver').value = item["Accountable"] || '';
+      
+      document.getElementById('pv-ics-desc').innerText = item["Asset Description"] || '';
+      document.getElementById('pv-ics-serial').innerText = item["Serial No."] || 'N/A';
+      document.getElementById('pv-ics-remarks').innerText = item["Remarks"] || item["Status"] || 'Active Asset';
+      document.getElementById('pv-ics-prop').innerText = item["Property No."] || '';
+      document.getElementById('pv-ics-life').innerText = item["Useful Life"] || coa.lifeStr;
+      document.getElementById('pv-ics-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-ics-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-ics-unitcost').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('pv-ics-totalcost').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      updateIcsPreview();
+      document.getElementById('icsModal').classList.remove('hidden');
+      document.getElementById('icsModal').classList.add('flex');
+    }
+
+    function updateIcsPreview() {
+      document.getElementById('pv-ics-entity').innerText = document.getElementById('ics-entity').value;
+      document.getElementById('pv-ics-fund').innerText = document.getElementById('ics-fund').value;
+      document.getElementById('pv-ics-no').innerText = document.getElementById('ics-no').value;
+      document.getElementById('pv-ics-qty').innerText = document.getElementById('ics-qty').value;
+      document.getElementById('pv-ics-unit').innerText = document.getElementById('ics-unit').value;
+      document.getElementById('pv-ics-receiver').innerText = document.getElementById('ics-receiver').value;
+      document.getElementById('pv-ics-receiver-desig').innerText = document.getElementById('ics-receiver-desig').value;
+      document.getElementById('pv-ics-issuer').innerText = document.getElementById('ics-issuer').value;
+      document.getElementById('pv-ics-issuer-desig').innerText = document.getElementById('ics-issuer-desig').value;
+    }
+
+    function closeIcsModal() {
+      document.getElementById('icsModal').classList.add('hidden');
+      document.getElementById('icsModal').classList.remove('flex');
     }
 
     fetchAssetData();
