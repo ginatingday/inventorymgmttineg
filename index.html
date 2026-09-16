@@ -211,8 +211,9 @@
       <h3 class="text-emerald-400 font-bold text-sm mb-4">➕ ADD NEW ASSET</h3>
       <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-2.5 text-xs">
         <div>
-          <label class="text-slate-400 text-[10px]">Photo URL (Google Drive or Image Link)</label>
-          <input type="url" id="add-photo" placeholder="https://drive.google.com/file/d/..." class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
+          <label class="text-slate-400 text-[10px]">Upload Photo</label>
+          <input type="file" id="add-photo" accept="image/*" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/20 file:text-emerald-400 hover:file:bg-emerald-500/30">
+          <input type="hidden" id="add-photo-base64">
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -290,12 +291,8 @@
         <div>
           <label class="text-slate-400 text-[10px]">Status</label>
           <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
-            <option value="functional">functional</option>
-            <option value="not functional">not functional</option>
-            <option value="stolen">stolen</option>
-            <option value="missing/cannot be found">missing/cannot be found</option>
-            <option value="wrecked">wrecked</option>
-            <option value="flooded/drowned">flooded/drowned</option>
+            <option value="Active Asset">Active Asset</option>
+            <option value="Fully Depreciated">Fully Depreciated</option>
           </select>
         </div>
         <div>
@@ -573,7 +570,7 @@
                   <td class="border border-slate-800 p-2 text-left">
                     <p id="pv-par-desc" class="font-bold uppercase text-slate-900">--</p>
                     <p class="text-[10px] text-slate-600 mt-1">SN: <span id="pv-par-serial">--</span></p>
-                    <p class="text-[10px] text-slate-600">Remarks: <span id="pv-par-remarks">functional</span></p>
+                    <p class="text-[10px] text-slate-600">Remarks: <span id="pv-par-remarks">Active Asset</span></p>
                   </td>
                   <td id="pv-par-prop" class="border border-slate-800 p-2 font-mono text-slate-800">--</td>
                   <td id="pv-par-acqdate" class="border border-slate-800 p-2">--</td>
@@ -651,16 +648,17 @@
       return d.toISOString().split('T')[0];
     }
 
-    function formatDriveUrl(url) {
-      if (!url) return '';
-      const driveRegex = /\/file\/d\/([^\/]+)|\?id=([^\&]+)/;
-      const match = url.match(driveRegex);
-      if (match) {
-        const fileId = match[1] || match[2];
-        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    // Event listener for direct photo file upload in the Add Asset form
+    document.getElementById('add-photo').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(uploadEvent) {
+          document.getElementById('add-photo-base64').value = uploadEvent.target.result;
+        };
+        reader.readAsDataURL(file);
       }
-      return url;
-    }
+    });
 
     /* --- COA COMPUTATION HELPER FUNCTIONS --- */
     function computeCOARulesForAsset(cost, categoryStr, acqDateStr) {
@@ -709,9 +707,9 @@
       
       const statusSelect = document.getElementById('add-status');
       if (computed.bookValue <= computed.salvage && costVal > 0) {
-        statusSelect.value = "not functional";
+        statusSelect.value = "Fully Depreciated";
       } else {
-        statusSelect.value = "functional";
+        statusSelect.value = "Active Asset";
       }
     }
 
@@ -827,7 +825,6 @@
       paginatedData.forEach((item, pageIdx) => {
         const globalIdx = startIndex + pageIdx;
         const rawPhotoVal = item["Photos"] || '';
-        const photoUrl = formatDriveUrl(rawPhotoVal);
         const propNo = item["Property No."] || 'N/A';
         const serialNo = item["Serial No."] || 'N/A';
         const date = formatDateOnly(item["Acquisition Date"]);
@@ -846,17 +843,15 @@
         const life = item["Useful Life"] || coa.lifeStr;
         const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
         
-        const status = item["Status"] || (bookVal <= salvage ? 'not functional' : 'functional');
+        const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
 
         // Editable status dropdown component
         const statusBadge = `
           <select onchange="updateStatus(${globalIdx}, this.value)" class="bg-[#060911] border border-slate-700 text-slate-200 rounded px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500">
-            <option value="functional" ${status === 'functional' ? 'selected' : ''}>functional</option>
-            <option value="not functional" ${status === 'not functional' ? 'selected' : ''}>not functional</option>
-            <option value="stolen" ${status === 'stolen' ? 'selected' : ''}>stolen</option>
-            <option value="missing/cannot be found" ${status === 'missing/cannot be found' ? 'selected' : ''}>missing/cannot be found</option>
-            <option value="wrecked" ${status === 'wrecked' ? 'selected' : ''}>wrecked</option>
-            <option value="flooded/drowned" ${status === 'flooded/drowned' ? 'selected' : ''}>flooded/drowned</option>
+            <option value="Active Asset" ${status === 'Active Asset' ? 'selected' : ''}>Active Asset</option>
+            <option value="Fully Depreciated" ${status === 'Fully Depreciated' ? 'selected' : ''}>Fully Depreciated</option>
+            <option value="Under Repair" ${status === 'Under Repair' ? 'selected' : ''}>Under Repair</option>
+            <option value="Unserviceable" ${status === 'Unserviceable' ? 'selected' : ''}>Unserviceable</option>
           </select>
         `;
 
@@ -866,7 +861,7 @@
 
         // Working photo cell logic bound to openPhotoModal
         const photoCell = rawPhotoVal.trim() !== '' 
-          ? `<a href="${photoUrl}" target="_blank"><img src="${photoUrl}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" title="Click to view image" /></a>`
+          ? `<a href="${rawPhotoVal}" target="_blank"><img src="${rawPhotoVal}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" title="Click to view image" /></a>`
           : `<button onclick="openPhotoModal(${globalIdx})" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto transition-colors">📷 + Photo</button>`;
 
         const remarksBtnStyle = remarks.trim() !== '' 
@@ -911,17 +906,24 @@
       }
     }
 
-    // Added handler function to make the + Photo button functional
+    // Added handler function to make the + Photo button functional with direct file upload
     function openPhotoModal(index) {
       selectedPhotoIdx = index;
-      const item = filteredAssetData[index];
-      const currentPhoto = item["Photos"] || '';
-      
-      const newUrl = prompt("Enter Image URL or Google Drive link for this asset:", currentPhoto);
-      if (newUrl !== null) {
-        filteredAssetData[selectedPhotoIdx]["Photos"] = newUrl.trim();
-        renderTable();
-      }
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = event => {
+            filteredAssetData[selectedPhotoIdx]["Photos"] = event.target.result;
+            renderTable();
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
     }
 
     function updatePaginationInfo(totalItems) {
@@ -1008,12 +1010,12 @@
       const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
       const categoryVal = document.getElementById('add-category').value;
       const acqDateVal = formatDateOnly(document.getElementById('add-date').value);
-      const photoInput = document.getElementById('add-photo').value;
+      const photoBase64 = document.getElementById('add-photo-base64').value;
       
       const computed = computeCOARulesForAsset(costVal, categoryVal, acqDateVal);
 
       const newObj = {
-        "Photos": formatDriveUrl(photoInput),
+        "Photos": photoBase64,
         "Property No.": document.getElementById('add-prop').value,
         "Serial No.": document.getElementById('add-serial').value,
         "Acquisition Date": acqDateVal,
@@ -1047,6 +1049,7 @@
         submitBtn.innerText = "💾 Save to Sheet";
         submitBtn.disabled = false;
         document.getElementById('addAssetForm').reset();
+        document.getElementById('add-photo-base64').value = '';
         closeAddModal();
       }
     }
@@ -1142,7 +1145,7 @@
           "Salvage (PHP)": item["Salvage (PHP)"] ? parseCurrency(item["Salvage (PHP)"]) : coa.salvage,
           "Useful Life": item["Useful Life"] || coa.lifeStr,
           "Book Value (PHP)": item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue,
-          "Status": item["Status"] || (coa.bookValue <= coa.salvage ? 'not functional' : 'functional'),
+          "Status": item["Status"] || (coa.bookValue <= coa.salvage ? 'Fully Depreciated' : 'Active Asset'),
           "Remarks": item["Remarks"] || ''
         };
       });
@@ -1184,7 +1187,7 @@
           item["Fund"] || '',
           `₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
           `₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
-          item["Status"] || (bookVal <= coa.salvage ? 'not functional' : 'functional'),
+          item["Status"] || (bookVal <= coa.salvage ? 'Fully Depreciated' : 'Active Asset'),
           item["Remarks"] || ''
         ];
       });
@@ -1267,10 +1270,11 @@
       
       document.getElementById('pv-par-desc').innerText = item["Asset Description"] || '';
       document.getElementById('pv-par-serial').innerText = item["Serial No."] || 'N/A';
-      document.getElementById('pv-par-remarks').innerText = item["Remarks"] || item["Status"] || 'functional';
+      document.getElementById('pv-par-remarks').innerText = item["Remarks"] || item["Status"] || 'Active Asset';
       document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
       document.getElementById('pv-par-acqdate').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.ей?.() // safe guard
       document.getElementById('pv-par-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
@@ -1300,3 +1304,4 @@
   </script>
 </body>
 </html>
+```[cite: 6]
