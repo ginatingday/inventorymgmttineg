@@ -211,9 +211,8 @@
       <h3 class="text-emerald-400 font-bold text-sm mb-4">➕ ADD NEW ASSET</h3>
       <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-2.5 text-xs">
         <div>
-          <label class="text-slate-400 text-[10px]">Upload Photo</label>
-          <input type="file" id="add-photo" accept="image/*" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/20 file:text-emerald-400 hover:file:bg-emerald-500/30">
-          <input type="hidden" id="add-photo-base64">
+          <label class="text-slate-400 text-[10px]">Photo URL (Google Drive or Image Link)</label>
+          <input type="url" id="add-photo" placeholder="https://drive.google.com/file/d/..." class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -648,17 +647,16 @@
       return d.toISOString().split('T')[0];
     }
 
-    // Event listener for direct photo file upload in the Add Asset form
-    document.getElementById('add-photo').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(uploadEvent) {
-          document.getElementById('add-photo-base64').value = uploadEvent.target.result;
-        };
-        reader.readAsDataURL(file);
+    function formatDriveUrl(url) {
+      if (!url) return '';
+      const driveRegex = /\/file\/d\/([^\/]+)|\?id=([^\&]+)/;
+      const match = url.match(driveRegex);
+      if (match) {
+        const fileId = match[1] || match[2];
+        return `https://drive.google.com/uc?export=view&id=${fileId}`;
       }
-    });
+      return url;
+    }
 
     /* --- COA COMPUTATION HELPER FUNCTIONS --- */
     function computeCOARulesForAsset(cost, categoryStr, acqDateStr) {
@@ -825,6 +823,7 @@
       paginatedData.forEach((item, pageIdx) => {
         const globalIdx = startIndex + pageIdx;
         const rawPhotoVal = item["Photos"] || '';
+        const photoUrl = formatDriveUrl(rawPhotoVal);
         const propNo = item["Property No."] || 'N/A';
         const serialNo = item["Serial No."] || 'N/A';
         const date = formatDateOnly(item["Acquisition Date"]);
@@ -861,7 +860,7 @@
 
         // Working photo cell logic bound to openPhotoModal
         const photoCell = rawPhotoVal.trim() !== '' 
-          ? `<a href="${rawPhotoVal}" target="_blank"><img src="${rawPhotoVal}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" title="Click to view image" /></a>`
+          ? `<a href="${photoUrl}" target="_blank"><img src="${photoUrl}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" title="Click to view image" /></a>`
           : `<button onclick="openPhotoModal(${globalIdx})" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto transition-colors">📷 + Photo</button>`;
 
         const remarksBtnStyle = remarks.trim() !== '' 
@@ -906,24 +905,17 @@
       }
     }
 
-    // Added handler function to make the + Photo button functional with direct file upload
+    // Added handler function to make the + Photo button functional
     function openPhotoModal(index) {
       selectedPhotoIdx = index;
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.onchange = e => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = event => {
-            filteredAssetData[selectedPhotoIdx]["Photos"] = event.target.result;
-            renderTable();
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-      input.click();
+      const item = filteredAssetData[index];
+      const currentPhoto = item["Photos"] || '';
+      
+      const newUrl = prompt("Enter Image URL or Google Drive link for this asset:", currentPhoto);
+      if (newUrl !== null) {
+        filteredAssetData[selectedPhotoIdx]["Photos"] = newUrl.trim();
+        renderTable();
+      }
     }
 
     function updatePaginationInfo(totalItems) {
@@ -1010,12 +1002,12 @@
       const costVal = parseFloat(document.getElementById('add-cost').value) || 0;
       const categoryVal = document.getElementById('add-category').value;
       const acqDateVal = formatDateOnly(document.getElementById('add-date').value);
-      const photoBase64 = document.getElementById('add-photo-base64').value;
+      const photoInput = document.getElementById('add-photo').value;
       
       const computed = computeCOARulesForAsset(costVal, categoryVal, acqDateVal);
 
       const newObj = {
-        "Photos": photoBase64,
+        "Photos": formatDriveUrl(photoInput),
         "Property No.": document.getElementById('add-prop').value,
         "Serial No.": document.getElementById('add-serial').value,
         "Acquisition Date": acqDateVal,
@@ -1049,7 +1041,6 @@
         submitBtn.innerText = "💾 Save to Sheet";
         submitBtn.disabled = false;
         document.getElementById('addAssetForm').reset();
-        document.getElementById('add-photo-base64').value = '';
         closeAddModal();
       }
     }
@@ -1274,7 +1265,6 @@
       document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
       document.getElementById('pv-par-acqdate').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
-      document.ей?.() // safe guard
       document.getElementById('pv-par-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
@@ -1304,4 +1294,3 @@
   </script>
 </body>
 </html>
-```[cite: 6]
