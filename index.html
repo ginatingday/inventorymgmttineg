@@ -205,6 +205,19 @@
     </main>
   </div>
 
+  <!-- PHOTO PREVIEW MODAL -->
+  <div id="photoModal" class="fixed inset-0 bg-black/85 hidden items-center justify-center p-4 z-50 no-print" onclick="closePhotoModal()">
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg max-w-2xl p-4 relative text-center shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-wider">📷 Asset Photo Preview</h3>
+        <button onclick="closePhotoModal()" class="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+      </div>
+      <div class="flex justify-center items-center bg-[#060911] p-2 rounded border border-slate-800/80 max-h-[70vh] overflow-auto">
+        <img id="modalPhotoImg" src="" class="max-h-[60vh] object-contain rounded" alt="Asset Photo">
+      </div>
+    </div>
+  </div>
+
   <!-- ADD ASSET MODAL -->
   <div id="addModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-lg p-5">
@@ -861,7 +874,7 @@
 
         // Working photo cell logic bound to openPhotoModal
         const photoCell = rawPhotoVal.trim() !== '' 
-          ? `<a href="${rawPhotoVal}" target="_blank"><img src="${rawPhotoVal}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" title="Click to view image" /></a>`
+          ? `<img src="${rawPhotoVal}" onclick="viewPhoto('${rawPhotoVal}')" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto cursor-pointer hover:border-emerald-500" title="Click to view image" />`
           : `<button onclick="openPhotoModal(${globalIdx})" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto transition-colors">📷 + Photo</button>`;
 
         const remarksBtnStyle = remarks.trim() !== '' 
@@ -904,6 +917,18 @@
       if (filteredAssetData[index]) {
         filteredAssetData[index]["Status"] = newStatus;
       }
+    }
+
+    // Modal view handlers for photos
+    function viewPhoto(url) {
+      document.getElementById('modalPhotoImg').src = url;
+      document.getElementById('photoModal').classList.remove('hidden');
+      document.getElementById('photoModal').classList.add('flex');
+    }
+
+    function closePhotoModal() {
+      document.getElementById('photoModal').classList.add('hidden');
+      document.getElementById('photoModal').classList.remove('flex');
     }
 
     // Added handler function to make the + Photo button functional with direct file upload
@@ -1170,7 +1195,7 @@
       doc.setFontSize(9);
       doc.text(`Generated on: ${new Date().toLocaleDateString()} | Total Items: ${filteredAssetData.length}`, 40, 55);
 
-      const headers = [["Prop No.", "Serial No.", "Acq. Date", "Description", "Accountable", "Office", "Fund", "Cost (PHP)", "Book Value", "Status", "Remarks"]];
+      const headers = [["Photo", "Prop No.", "Serial No.", "Acq. Date", "Description", "Accountable", "Office", "Fund", "Cost (PHP)", "Book Value", "Status", "Remarks"]];
       
       const rows = filteredAssetData.map(item => {
         const cost = parseCurrency(item["Cost (PHP)"]);
@@ -1178,6 +1203,7 @@
         const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
 
         return [
+          item["Photos"] ? { image: item["Photos"], width: 24, height: 24 } : '',
           item["Property No."] || '',
           item["Serial No."] || '',
           formatDateOnly(item["Acquisition Date"]),
@@ -1196,9 +1222,23 @@
         head: headers,
         body: rows,
         startY: 70,
+        rowPageBreak: 'avoid',
+        bodyStyles: { minCellHeight: 30, valign: 'middle' },
         styles: { fontSize: 8, cellPadding: 4 },
         headStyles: { fillColor: [15, 21, 35], textColor: [255, 255, 255] },
-        alternateRowStyles: { fillColor: [245, 247, 250] }
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        didDrawCell: function (data) {
+          if (data.column.index === 0 && data.cell.section === 'body') {
+            const item = filteredAssetData[data.row.index];
+            if (item && item["Photos"]) {
+              try {
+                doc.addImage(item["Photos"], 'JPEG', data.cell.x + 4, data.cell.y + 3, 24, 24);
+              } catch (e) {
+                // Fallback format if needed
+              }
+            }
+          }
+        }
       });
 
       doc.save(`LGU_TINEG_Asset_Inventory_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -1274,7 +1314,6 @@
       document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
       document.getElementById('pv-par-acqdate').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
-      document.ей?.() // safe guard
       document.getElementById('pv-par-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
@@ -1304,4 +1343,3 @@
   </script>
 </body>
 </html>
-```[cite: 6]
