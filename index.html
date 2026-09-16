@@ -290,8 +290,12 @@
         <div>
           <label class="text-slate-400 text-[10px]">Status</label>
           <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
-            <option value="Active Asset">Active Asset</option>
-            <option value="Fully Depreciated">Fully Depreciated</option>
+            <option value="functional">functional</option>
+            <option value="not functional">not functional</option>
+            <option value="stolen">stolen</option>
+            <option value="missing/cannot be found">missing/cannot be found</option>
+            <option value="wrecked">wrecked</option>
+            <option value="flooded/drowned">flooded/drowned</option>
           </select>
         </div>
         <div>
@@ -569,7 +573,7 @@
                   <td class="border border-slate-800 p-2 text-left">
                     <p id="pv-par-desc" class="font-bold uppercase text-slate-900">--</p>
                     <p class="text-[10px] text-slate-600 mt-1">SN: <span id="pv-par-serial">--</span></p>
-                    <p class="text-[10px] text-slate-600">Remarks: <span id="pv-par-remarks">Active Asset</span></p>
+                    <p class="text-[10px] text-slate-600">Remarks: <span id="pv-par-remarks">functional</span></p>
                   </td>
                   <td id="pv-par-prop" class="border border-slate-800 p-2 font-mono text-slate-800">--</td>
                   <td id="pv-par-acqdate" class="border border-slate-800 p-2">--</td>
@@ -705,9 +709,9 @@
       
       const statusSelect = document.getElementById('add-status');
       if (computed.bookValue <= computed.salvage && costVal > 0) {
-        statusSelect.value = "Fully Depreciated";
+        statusSelect.value = "not functional";
       } else {
-        statusSelect.value = "Active Asset";
+        statusSelect.value = "functional";
       }
     }
 
@@ -842,15 +846,17 @@
         const life = item["Useful Life"] || coa.lifeStr;
         const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
         
-        const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
+        const status = item["Status"] || (bookVal <= salvage ? 'not functional' : 'functional');
 
         // Editable status dropdown component
         const statusBadge = `
           <select onchange="updateStatus(${globalIdx}, this.value)" class="bg-[#060911] border border-slate-700 text-slate-200 rounded px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500">
-            <option value="Active Asset" ${status === 'Active Asset' ? 'selected' : ''}>Active Asset</option>
-            <option value="Fully Depreciated" ${status === 'Fully Depreciated' ? 'selected' : ''}>Fully Depreciated</option>
-            <option value="Under Repair" ${status === 'Under Repair' ? 'selected' : ''}>Under Repair</option>
-            <option value="Unserviceable" ${status === 'Unserviceable' ? 'selected' : ''}>Unserviceable</option>
+            <option value="functional" ${status === 'functional' ? 'selected' : ''}>functional</option>
+            <option value="not functional" ${status === 'not functional' ? 'selected' : ''}>not functional</option>
+            <option value="stolen" ${status === 'stolen' ? 'selected' : ''}>stolen</option>
+            <option value="missing/cannot be found" ${status === 'missing/cannot be found' ? 'selected' : ''}>missing/cannot be found</option>
+            <option value="wrecked" ${status === 'wrecked' ? 'selected' : ''}>wrecked</option>
+            <option value="flooded/drowned" ${status === 'flooded/drowned' ? 'selected' : ''}>flooded/drowned</option>
           </select>
         `;
 
@@ -1136,7 +1142,7 @@
           "Salvage (PHP)": item["Salvage (PHP)"] ? parseCurrency(item["Salvage (PHP)"]) : coa.salvage,
           "Useful Life": item["Useful Life"] || coa.lifeStr,
           "Book Value (PHP)": item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue,
-          "Status": item["Status"] || (coa.bookValue <= coa.salvage ? 'Fully Depreciated' : 'Active Asset'),
+          "Status": item["Status"] || (coa.bookValue <= coa.salvage ? 'not functional' : 'functional'),
           "Remarks": item["Remarks"] || ''
         };
       });
@@ -1178,7 +1184,7 @@
           item["Fund"] || '',
           `₱${cost.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
           `₱${bookVal.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
-          item["Status"] || (bookVal <= coa.salvage ? 'Fully Depreciated' : 'Active Asset'),
+          item["Status"] || (bookVal <= coa.salvage ? 'not functional' : 'functional'),
           item["Remarks"] || ''
         ];
       });
@@ -1261,7 +1267,7 @@
       
       document.getElementById('pv-par-desc').innerText = item["Asset Description"] || '';
       document.getElementById('pv-par-serial').innerText = item["Serial No."] || 'N/A';
-      document.getElementById('pv-par-remarks').innerText = item["Remarks"] || item["Status"] || 'Active Asset';
+      document.getElementById('pv-par-remarks').innerText = item["Remarks"] || item["Status"] || 'functional';
       document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
       document.getElementById('pv-par-acqdate').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
