@@ -371,6 +371,7 @@
         <img id="modal-photo-display" src="" alt="Asset Photo" class="max-h-[60vh] max-w-full rounded border border-slate-800 object-contain shadow-md">
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button onclick="replacePhotoFromModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded text-xs transition-colors">🔄 Replace Photo</button>
         <button onclick="closePhotoViewModal()" class="bg-slate-800 text-slate-300 px-4 py-1.5 rounded text-xs">Close</button>
       </div>
     </div>
@@ -1173,6 +1174,11 @@
       document.getElementById('photoViewModal').classList.remove('flex');
     }
 
+    function replacePhotoFromModal() {
+      closePhotoViewModal();
+      openPhotoUploadModal(selectedPhotoIdx);
+    }
+
     function openPhotoUploadModal(index) {
       selectedPhotoIdx = index;
       const input = document.createElement('input');
@@ -1656,7 +1662,7 @@
       document.getElementById('icsModal').classList.remove('flex');
     }
 
-    fetchAssetData();
+    window.onload = fetchAssetData;
   </script>
 </body>
 </html>
