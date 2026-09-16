@@ -844,10 +844,15 @@
         
         const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
 
-        const isDepreciated = String(status).toLowerCase().includes('fully');
-        const statusBadge = isDepreciated 
-          ? `<span class="bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Fully Depreciated</span>`
-          : `<span class="bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 rounded-full text-[9px] font-bold">Active Asset</span>`;
+        // Editable status dropdown component
+        const statusBadge = `
+          <select onchange="updateStatus(${globalIdx}, this.value)" class="bg-[#060911] border border-slate-700 text-slate-200 rounded px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500">
+            <option value="Active Asset" ${status === 'Active Asset' ? 'selected' : ''}>Active Asset</option>
+            <option value="Fully Depreciated" ${status === 'Fully Depreciated' ? 'selected' : ''}>Fully Depreciated</option>
+            <option value="Under Repair" ${status === 'Under Repair' ? 'selected' : ''}>Under Repair</option>
+            <option value="Unserviceable" ${status === 'Unserviceable' ? 'selected' : ''}>Unserviceable</option>
+          </select>
+        `;
 
         const categoryBadge = capitalized
           ? `<span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Capitalized (≥50k)</span>`
@@ -891,6 +896,13 @@
       });
 
       updatePaginationInfo(filteredAssetData.length);
+    }
+
+    // Function to handle inline editable status changes
+    function updateStatus(index, newStatus) {
+      if (filteredAssetData[index]) {
+        filteredAssetData[index]["Status"] = newStatus;
+      }
     }
 
     // Added handler function to make the + Photo button functional
