@@ -309,6 +309,8 @@
           <select id="add-status" class="w-full bg-[#060911] border border-slate-800 p-2 rounded mt-1 text-slate-200">
             <option value="Active Asset">Active Asset</option>
             <option value="Fully Depreciated">Fully Depreciated</option>
+            <option value="Unserviceable">Unserviceable</option>
+            <option value="Under repair">Under repair</option>
             <option value="Stolen">Stolen</option>
             <option value="Missing">Missing</option>
             <option value="cannot be found">cannot be found</option>
@@ -1049,6 +1051,8 @@
           <select onchange="updateStatus(${globalIdx}, this.value)" class="bg-[#060911] border border-slate-700 text-slate-200 rounded px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500">
             <option value="Active Asset" ${status === 'Active Asset' ? 'selected' : ''}>Active Asset</option>
             <option value="Fully Depreciated" ${status === 'Fully Depreciated' ? 'selected' : ''}>Fully Depreciated</option>
+            <option value="Unserviceable" ${status === 'Unserviceable' ? 'selected' : ''}>Unserviceable</option>
+            <option value="Under repair" ${status === 'Under repair' ? 'selected' : ''}>Under repair</option>
             <option value="Stolen" ${status === 'Stolen' ? 'selected' : ''}>Stolen</option>
             <option value="Missing" ${status === 'Missing' ? 'selected' : ''}>Missing</option>
             <option value="cannot be found" ${status === 'cannot be found' ? 'selected' : ''}>cannot be found</option>
