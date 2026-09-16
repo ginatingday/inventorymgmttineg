@@ -11,18 +11,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     @media print {
-      /* Hide body content by default */
       body {
         visibility: hidden !important;
         background: white !important;
       }
 
-      /* Hide both modals by default during print */
-      #stickerModal, #parModal {
+      #stickerModal, #parModal, #photoViewModal {
         display: none !important;
       }
 
-      /* Only show sticker modal when printing sticker */
       body.print-sticker #stickerModal {
         display: block !important;
         position: static !important;
@@ -30,7 +27,6 @@
         padding: 0 !important;
       }
 
-      /* Only show PAR modal when printing PAR */
       body.print-par #parModal {
         display: block !important;
         position: static !important;
@@ -38,7 +34,6 @@
         padding: 0 !important;
       }
 
-      /* Hide non-printable UI controls inside modals */
       .no-print, 
       #stickerModal > div > div:first-child,
       #stickerModal > div > div:last-child,
@@ -49,7 +44,6 @@
         display: none !important;
       }
 
-      /* Make active target area visible based on print mode */
       body.print-sticker #printableArea,
       body.print-sticker #printableArea * {
         visibility: visible !important;
@@ -60,7 +54,6 @@
         visibility: visible !important;
       }
 
-      /* Target container reset for clean page printing */
       #printableArea, #printablePARArea {
         position: absolute !important;
         left: 0 !important;
@@ -203,6 +196,26 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- PHOTO VIEW MODAL -->
+  <div id="photoViewModal" class="fixed inset-0 bg-black/85 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-xl p-5 shadow-2xl relative flex flex-col items-center">
+      <div class="w-full flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <h3 class="text-emerald-400 font-bold text-sm" id="photoModalTitle">📸 Asset Photo Viewer</h3>
+        <button onclick="closePhotoViewModal()" class="text-slate-400 hover:text-white font-bold text-base">✕</button>
+      </div>
+      <div class="w-full bg-[#060911] border border-slate-800 rounded flex items-center justify-center p-2 mb-4 overflow-hidden max-h-[60vh]">
+        <img id="modalViewImg" src="" class="max-h-[55vh] object-contain rounded" alt="Asset Photo Preview">
+      </div>
+      <div class="w-full flex items-center justify-between">
+        <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors">
+          🔄 Change Photo
+          <input type="file" id="replacePhotoInput" accept="image/*" onchange="handlePhotoReplacement(event)" class="hidden">
+        </label>
+        <button onclick="closePhotoViewModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-1.5 rounded text-xs">Done</button>
+      </div>
+    </div>
   </div>
 
   <!-- ADD ASSET MODAL -->
@@ -740,7 +753,7 @@
     let rawAssetData = [];
     let filteredAssetData = [];
     let selectedRemarksIdx = null;
-    let selectedPhotoIdx = null; // Added photo state tracking
+    let selectedPhotoIdx = null; // State tracking for viewing/replacing photos
     
     // Pagination Variables
     let currentPage = 1;
@@ -845,7 +858,6 @@
         
         const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
 
-        // Editable status dropdown component
         const statusBadge = `
           <select onchange="updateStatus(${globalIdx}, this.value)" class="bg-[#060911] border border-slate-700 text-slate-200 rounded px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500">
             <option value="Active Asset" ${status === 'Active Asset' ? 'selected' : ''}>Active Asset</option>
@@ -859,10 +871,10 @@
           ? `<span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Capitalized (≥50k)</span>`
           : `<span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Semi-Expendable (<50k)</span>`;
 
-        // Working photo cell logic bound to openPhotoModal
+        // Clickable Photo preview thumbnail opening the Photo Viewer modal
         const photoCell = rawPhotoVal.trim() !== '' 
-          ? `<a href="${rawPhotoVal}" target="_blank"><img src="${rawPhotoVal}" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto" title="Click to view image" /></a>`
-          : `<button onclick="openPhotoModal(${globalIdx})" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto transition-colors">📷 + Photo</button>`;
+          ? `<img src="${rawPhotoVal}" onclick="openPhotoViewModal(${globalIdx})" class="w-7 h-7 object-cover rounded border border-emerald-500/50 mx-auto cursor-pointer hover:scale-105 transition-transform" title="Click to view photo" />`
+          : `<button onclick="openPhotoViewModal(${globalIdx})" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto transition-colors">📷 + Photo</button>`;
 
         const remarksBtnStyle = remarks.trim() !== '' 
           ? 'bg-amber-950 hover:bg-amber-900 text-amber-300 border-amber-800/80' 
@@ -899,31 +911,60 @@
       updatePaginationInfo(filteredAssetData.length);
     }
 
-    // Function to handle inline editable status changes
     function updateStatus(index, newStatus) {
       if (filteredAssetData[index]) {
         filteredAssetData[index]["Status"] = newStatus;
       }
     }
 
-    // Added handler function to make the + Photo button functional with direct file upload
-    function openPhotoModal(index) {
+    /* Photo Viewer Modal Logic */
+    function openPhotoViewModal(index) {
       selectedPhotoIdx = index;
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.onchange = e => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = event => {
-            filteredAssetData[selectedPhotoIdx]["Photos"] = event.target.result;
-            renderTable();
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-      input.click();
+      const item = filteredAssetData[index];
+      const photoVal = item["Photos"] || '';
+      
+      const modalImg = document.getElementById('modalViewImg');
+      const titleElem = document.getElementById('photoModalTitle');
+      
+      titleElem.innerText = `📸 Photo - ${item["Asset Description"] || 'Asset'} (${item["Property No."] || ''})`;
+
+      if (photoVal.trim() !== '') {
+        modalImg.src = photoVal;
+        modalImg.style.display = 'block';
+      } else {
+        modalImg.src = '';
+        modalImg.style.display = 'none';
+        // Immediately trigger file selector if no photo exists yet
+        document.getElementById('replacePhotoInput').click();
+        return;
+      }
+
+      document.getElementById('photoViewModal').classList.remove('hidden');
+      document.getElementById('photoViewModal').classList.add('flex');
+    }
+
+    function closePhotoViewModal() {
+      selectedPhotoIdx = null;
+      document.getElementById('photoViewModal').classList.add('hidden');
+      document.getElementById('photoViewModal').classList.remove('flex');
+    }
+
+    function handlePhotoReplacement(event) {
+      const file = event.target.files[0];
+      if (file && selectedPhotoIdx !== null) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          filteredAssetData[selectedPhotoIdx]["Photos"] = e.target.result;
+          renderTable();
+          // If modal is open, update view
+          const modalImg = document.getElementById('modalViewImg');
+          modalImg.src = e.target.result;
+          modalImg.style.display = 'block';
+          document.getElementById('photoViewModal').classList.remove('hidden');
+          document.getElementById('photoViewModal').classList.add('flex');
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
     function updatePaginationInfo(totalItems) {
@@ -1121,7 +1162,7 @@
       }
     }
 
-    /* Export Functions */
+    /* Export Functions with Photo Inclusion */
     function exportToExcel() {
       if (!filteredAssetData || filteredAssetData.length === 0) {
         alert("No asset records available to export.");
@@ -1133,7 +1174,8 @@
         const coa = computeCOARulesForAsset(cost, item["Category"], item["Acquisition Date"]);
         
         return {
-          "Photos": item["Photos"] || '',
+          "Photo Included": item["Photos"] ? "Yes (Data URL attached)" : "No",
+          "Photos Data": item["Photos"] || '',
           "Property No.": item["Property No."] || '',
           "Serial No.": item["Serial No."] || '',
           "Acquisition Date": formatDateOnly(item["Acquisition Date"]),
@@ -1166,11 +1208,11 @@
       const doc = new jsPDF('landscape', 'pt', 'a4');
 
       doc.setFontSize(14);
-      doc.text("LGU TINEG - Local Asset Inventory Ledger", 40, 40);
+      doc.text("LGU TINEG - Local Asset Inventory Ledger (with Photo Indicators)", 40, 40);
       doc.setFontSize(9);
       doc.text(`Generated on: ${new Date().toLocaleDateString()} | Total Items: ${filteredAssetData.length}`, 40, 55);
 
-      const headers = [["Prop No.", "Serial No.", "Acq. Date", "Description", "Accountable", "Office", "Fund", "Cost (PHP)", "Book Value", "Status", "Remarks"]];
+      const headers = [["Photo?", "Prop No.", "Serial No.", "Acq. Date", "Description", "Accountable", "Office", "Fund", "Cost (PHP)", "Book Value", "Status", "Remarks"]];
       
       const rows = filteredAssetData.map(item => {
         const cost = parseCurrency(item["Cost (PHP)"]);
@@ -1178,6 +1220,7 @@
         const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
 
         return [
+          item["Photos"] ? "Available" : "None",
           item["Property No."] || '',
           item["Serial No."] || '',
           formatDateOnly(item["Acquisition Date"]),
@@ -1274,7 +1317,6 @@
       document.getElementById('pv-par-prop').innerText = item["Property No."] || '';
       document.getElementById('pv-par-acqdate').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
-      document.ей?.() // safe guard
       document.getElementById('pv-par-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
       document.getElementById('pv-par-amount').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
@@ -1304,4 +1346,3 @@
   </script>
 </body>
 </html>
-```[cite: 6]
