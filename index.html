@@ -824,7 +824,36 @@
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyTnvMRzK_-0Xv_n0gJM1KoNT70tmYEGONSl7INsYfMlyMlldJUN0eWAtW5K0kplA3ylw/exec";
-    
+    const STORAGE_KEY_PHOTOS = "lgu_asset_photos_cache";
+    const STORAGE_KEY_ASSETS = "lgu_asset_data_cache";
+
+    function getStoredPhotos() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY_PHOTOS)) || {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveStoredPhoto(propNo, base64Photo) {
+      if (!propNo) return;
+      const photos = getStoredPhotos();
+      photos[propNo] = base64Photo;
+      try {
+        localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(photos));
+      } catch (e) {
+        console.warn("Storage quota exceeded, photo saved to session state only.");
+      }
+    }
+
+    function saveLocalAssetCache() {
+      try {
+        localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(rawAssetData));
+      } catch (e) {
+        console.warn("Unable to save asset cache to localStorage.");
+      }
+    }
+
     function printSticker() {
       document.body.classList.add('print-sticker');
       document.body.classList.remove('print-par', 'print-ics');
@@ -933,7 +962,7 @@
       {"Property No.": "XV-013", "Serial No.": "SN-99102", "Acquisition Date": "2025-03-01", "Asset Description": "4Kw Gasoline Generator Unit", "Accountable": "KRIZA TINGDAY", "Category": "Capitalized Asset", "Office": "MDRRMO", "Fund": "5% LDRRM", "Cost (PHP)": 75000, "Remarks": "Standby rescue unit"},
       {"Property No.": "XV-014", "Serial No.": "SN-66512", "Acquisition Date": "2025-03-15", "Asset Description": "DSLR Camera System for Info", "Accountable": "KIMBERLYN QUEZADA", "Category": "Capitalized Asset", "Office": "MO", "Fund": "GF-PPEs", "Cost (PHP)": 62000, "Remarks": ""},
       {"Property No.": "XV-015", "Serial No.": "SN-12903", "Acquisition Date": "2025-04-02", "Asset Description": "Filing Cabinet 4-Drawer Steel", "Accountable": "JUAN DELA CRUZ", "Category": "Semi-Expendable Asset", "Office": "MAGO", "Fund": "GF-PPEs", "Cost (PHP)": 12000, "Remarks": ""},
-      {"Property No.": "XV-016", "Serial No.": "SN-77192", "Acquisition Date": "2025-05-10", "Asset Description": "Water Dispenser Hot/Cold", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 7800, "Remarks": ""},
+      {"Property No.": "XV-016", "Serial No.": "SN-77192", "Acquisition Date": "2025-06-01", "Asset Description": "Water Dispenser Hot/Cold", "Accountable": "MARIA SANTOS", "Category": "Semi-Expendable Asset", "Office": "MBO", "Fund": "GF-PPEs", "Cost (PHP)": 7800, "Remarks": ""},
       {"Property No.": "XV-017", "Serial No.": "SN-88231", "Acquisition Date": "2025-06-01", "Asset Description": "Public Address System Speakers", "Accountable": "ROBY TINONG", "Category": "Capitalized Asset", "Office": "GSO", "Fund": "GF-PPEs", "Cost (PHP)": 89000, "Remarks": "Used for public functions"},
       {"Property No.": "XV-018", "Serial No.": "SN-33102", "Acquisition Date": "2025-06-20", "Asset Description": "Biometric Attendance Scanner", "Accountable": "ANA TINGDAY", "Category": "Semi-Expendable Asset", "Office": "HRMO", "Fund": "GF-PPEs", "Cost (PHP)": 15500, "Remarks": ""},
       {"Property No.": "XV-019", "Serial No.": "SN-00129", "Acquisition Date": "2025-07-05", "Asset Description": "Digital Vault Heavy Duty", "Accountable": "QUEZADA SHERYLL", "Category": "Capitalized Asset", "Office": "MTO", "Fund": "GF-PPEs", "Cost (PHP)": 54000, "Remarks": "Vault room level 1"},
@@ -962,15 +991,29 @@
     }
 
     async function fetchAssetData() {
+      const storedPhotos = getStoredPhotos();
       try {
         const response = await fetch(API_URL);
         const liveData = await response.json();
         rawAssetData = liveData && liveData.length > 0 ? liveData : mock20Assets;
       } catch (error) {
-        console.log("Using default 20 entries dataset.");
-        rawAssetData = mock20Assets;
+        console.log("Using local/cached asset dataset.");
+        try {
+          const cachedAssets = JSON.parse(localStorage.getItem(STORAGE_KEY_ASSETS));
+          rawAssetData = cachedAssets && cachedAssets.length > 0 ? cachedAssets : mock20Assets;
+        } catch (e) {
+          rawAssetData = mock20Assets;
+        }
       }
+
+      rawAssetData.forEach(item => {
+        const propNo = item["Property No."];
+        if (propNo && storedPhotos[propNo]) {
+          item["Photos"] = storedPhotos[propNo];
+        }
+      });
       
+      saveLocalAssetCache();
       populateDynamicDropdowns(rawAssetData);
       filterTable();
     }
@@ -1110,6 +1153,7 @@
     function updateStatus(index, newStatus) {
       if (filteredAssetData[index]) {
         filteredAssetData[index]["Status"] = newStatus;
+        saveLocalAssetCache();
       }
     }
 
@@ -1139,7 +1183,13 @@
         if (file) {
           const reader = new FileReader();
           reader.onload = event => {
-            filteredAssetData[selectedPhotoIdx]["Photos"] = event.target.result;
+            const base64Data = event.target.result;
+            filteredAssetData[selectedPhotoIdx]["Photos"] = base64Data;
+            const propNo = filteredAssetData[selectedPhotoIdx]["Property No."];
+            if (propNo) {
+              saveStoredPhoto(propNo, base64Data);
+            }
+            saveLocalAssetCache();
             renderTable();
           };
           reader.readAsDataURL(file);
@@ -1254,7 +1304,12 @@
         "Remarks": document.getElementById('add-remarks').value
       };
 
+      if (newObj["Property No."] && photoBase64) {
+        saveStoredPhoto(newObj["Property No."], photoBase64);
+      }
+
       rawAssetData.unshift(newObj);
+      saveLocalAssetCache();
       populateDynamicDropdowns(rawAssetData);
       filterTable();
 
@@ -1337,6 +1392,7 @@
       if (selectedRemarksIdx !== null && filteredAssetData[selectedRemarksIdx]) {
         const updatedRemark = document.getElementById('rem-text-input').value;
         filteredAssetData[selectedRemarksIdx]["Remarks"] = updatedRemark;
+        saveLocalAssetCache();
         renderTable();
         closeRemarksModal();
       }
