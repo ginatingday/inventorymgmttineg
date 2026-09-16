@@ -205,19 +205,6 @@
     </main>
   </div>
 
-  <!-- PHOTO PREVIEW MODAL -->
-  <div id="photoModal" class="fixed inset-0 bg-black/85 hidden items-center justify-center p-4 z-50 no-print" onclick="closePhotoModal()">
-    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg max-w-2xl p-4 relative text-center shadow-2xl" onclick="event.stopPropagation()">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-        <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-wider">📷 Asset Photo Preview</h3>
-        <button onclick="closePhotoModal()" class="text-slate-400 hover:text-white font-bold text-sm">✕</button>
-      </div>
-      <div class="flex justify-center items-center bg-[#060911] p-2 rounded border border-slate-800/80 max-h-[70vh] overflow-auto">
-        <img id="modalPhotoImg" src="" class="max-h-[60vh] object-contain rounded" alt="Asset Photo">
-      </div>
-    </div>
-  </div>
-
   <!-- ADD ASSET MODAL -->
   <div id="addModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-lg p-5">
@@ -344,6 +331,22 @@
       <div class="mt-4 flex justify-end gap-2 pt-3 border-t border-slate-800">
         <button type="button" onclick="closeRemarksModal()" class="bg-slate-800 text-slate-300 px-3 py-1.5 rounded text-xs">Cancel</button>
         <button type="button" onclick="saveRemarks()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded text-xs">💾 Save Remarks</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHOTO VIEW MODAL -->
+  <div id="photoViewModal" class="fixed inset-0 bg-black/85 hidden items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-2xl p-5 shadow-2xl text-center">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <h3 class="text-emerald-400 font-bold text-sm flex items-center gap-1.5">📷 ASSET PHOTO PREVIEW</h3>
+        <button onclick="closePhotoViewModal()" class="text-slate-400 hover:text-white font-bold text-base">✕</button>
+      </div>
+      <div class="my-4 flex justify-center">
+        <img id="modal-photo-display" src="" alt="Asset Photo" class="max-h-[60vh] max-w-full rounded border border-slate-800 object-contain shadow-md">
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button onclick="closePhotoViewModal()" class="bg-slate-800 text-slate-300 px-4 py-1.5 rounded text-xs">Close</button>
       </div>
     </div>
   </div>
@@ -753,7 +756,7 @@
     let rawAssetData = [];
     let filteredAssetData = [];
     let selectedRemarksIdx = null;
-    let selectedPhotoIdx = null; // Added photo state tracking
+    let selectedPhotoIdx = null;
     
     // Pagination Variables
     let currentPage = 1;
@@ -858,7 +861,6 @@
         
         const status = item["Status"] || (bookVal <= salvage ? 'Fully Depreciated' : 'Active Asset');
 
-        // Editable status dropdown component
         const statusBadge = `
           <select onchange="updateStatus(${globalIdx}, this.value)" class="bg-[#060911] border border-slate-700 text-slate-200 rounded px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500">
             <option value="Active Asset" ${status === 'Active Asset' ? 'selected' : ''}>Active Asset</option>
@@ -872,10 +874,10 @@
           ? `<span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Capitalized (≥50k)</span>`
           : `<span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[9px] font-bold">Semi-Expendable (<50k)</span>`;
 
-        // Working photo cell logic bound to openPhotoModal
+        // Clickable thumbnail view or upload trigger
         const photoCell = rawPhotoVal.trim() !== '' 
-          ? `<img src="${rawPhotoVal}" onclick="viewPhoto('${rawPhotoVal}')" class="w-7 h-7 object-cover rounded border border-slate-700 mx-auto cursor-pointer hover:border-emerald-500" title="Click to view image" />`
-          : `<button onclick="openPhotoModal(${globalIdx})" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto transition-colors">📷 + Photo</button>`;
+          ? `<button onclick="openPhotoViewModal(${globalIdx})" class="mx-auto block"><img src="${rawPhotoVal}" class="w-7 h-7 object-cover rounded border border-emerald-500/60 hover:scale-110 transition-transform mx-auto" title="Click to view full photo" /></button>`
+          : `<button onclick="openPhotoUploadModal(${globalIdx})" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2 py-1 rounded text-[10px] font-medium mx-auto transition-colors">📷 + Photo</button>`;
 
         const remarksBtnStyle = remarks.trim() !== '' 
           ? 'bg-amber-950 hover:bg-amber-900 text-amber-300 border-amber-800/80' 
@@ -912,27 +914,30 @@
       updatePaginationInfo(filteredAssetData.length);
     }
 
-    // Function to handle inline editable status changes
     function updateStatus(index, newStatus) {
       if (filteredAssetData[index]) {
         filteredAssetData[index]["Status"] = newStatus;
       }
     }
 
-    // Modal view handlers for photos
-    function viewPhoto(url) {
-      document.getElementById('modalPhotoImg').src = url;
-      document.getElementById('photoModal').classList.remove('hidden');
-      document.getElementById('photoModal').classList.add('flex');
+    // Photo Modal & Upload Handlers
+    function openPhotoViewModal(index) {
+      selectedPhotoIdx = index;
+      const item = filteredAssetData[index];
+      const photoVal = item["Photos"];
+      if (photoVal) {
+        document.getElementById('modal-photo-display').src = photoVal;
+        document.getElementById('photoViewModal').classList.remove('hidden');
+        document.getElementById('photoViewModal').classList.add('flex');
+      }
     }
 
-    function closePhotoModal() {
-      document.getElementById('photoModal').classList.add('hidden');
-      document.getElementById('photoModal').classList.remove('flex');
+    function closePhotoViewModal() {
+      document.getElementById('photoViewModal').classList.add('hidden');
+      document.getElementById('photoViewModal').classList.remove('flex');
     }
 
-    // Added handler function to make the + Photo button functional with direct file upload
-    function openPhotoModal(index) {
+    function openPhotoUploadModal(index) {
       selectedPhotoIdx = index;
       const input = document.createElement('input');
       input.type = 'file';
@@ -1195,7 +1200,7 @@
       doc.setFontSize(9);
       doc.text(`Generated on: ${new Date().toLocaleDateString()} | Total Items: ${filteredAssetData.length}`, 40, 55);
 
-      const headers = [["Photo", "Prop No.", "Serial No.", "Acq. Date", "Description", "Accountable", "Office", "Fund", "Cost (PHP)", "Book Value", "Status", "Remarks"]];
+      const headers = [["Prop No.", "Serial No.", "Acq. Date", "Description", "Accountable", "Office", "Fund", "Cost (PHP)", "Book Value", "Status", "Remarks"]];
       
       const rows = filteredAssetData.map(item => {
         const cost = parseCurrency(item["Cost (PHP)"]);
@@ -1203,7 +1208,6 @@
         const bookVal = item["Book Value (PHP)"] !== undefined ? parseCurrency(item["Book Value (PHP)"]) : coa.bookValue;
 
         return [
-          item["Photos"] ? { image: item["Photos"], width: 24, height: 24 } : '',
           item["Property No."] || '',
           item["Serial No."] || '',
           formatDateOnly(item["Acquisition Date"]),
@@ -1222,24 +1226,55 @@
         head: headers,
         body: rows,
         startY: 70,
-        rowPageBreak: 'avoid',
-        bodyStyles: { minCellHeight: 30, valign: 'middle' },
         styles: { fontSize: 8, cellPadding: 4 },
         headStyles: { fillColor: [15, 21, 35], textColor: [255, 255, 255] },
-        alternateRowStyles: { fillColor: [245, 247, 250] },
-        didDrawCell: function (data) {
-          if (data.column.index === 0 && data.cell.section === 'body') {
-            const item = filteredAssetData[data.row.index];
-            if (item && item["Photos"]) {
-              try {
-                doc.addImage(item["Photos"], 'JPEG', data.cell.x + 4, data.cell.y + 3, 24, 24);
-              } catch (e) {
-                // Fallback format if needed
-              }
-            }
-          }
-        }
+        alternateRowStyles: { fillColor: [245, 247, 250] }
       });
+
+      // --- ANNEX: COMPREHENSIVE ASSET PHOTO DOCUMENTATION ---
+      const itemsWithPhotos = filteredAssetData.filter(item => item["Photos"] && item["Photos"].trim() !== '');
+      if (itemsWithPhotos.length > 0) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text("ANNEX: COMPREHENSIVE ASSET PHOTO DOCUMENTATION", 40, 40);
+        doc.setFontSize(9);
+        doc.text(`Photographic records for uploaded asset items as of ${new Date().toLocaleDateString()}`, 40, 55);
+
+        let startY = 75;
+        itemsWithPhotos.forEach((item, index) => {
+          // Check if we need a new page for photo items to prevent clipping
+          if (startY > 450) {
+            doc.addPage();
+            startY = 40;
+          }
+
+          const propNo = item["Property No."] || 'N/A';
+          const desc = item["Asset Description"] || 'N/A';
+          const office = item["Office"] || 'N/A';
+          const accountable = item["Accountable"] || 'N/A';
+
+          doc.setFontSize(10);
+          doc.setTextColor(15, 21, 35);
+          doc.text(`Item #${index + 1}: [${propNo}] ${desc} (${office} - Accountable: ${accountable})`, 40, startY);
+
+          try {
+            const imgData = item["Photos"];
+            // Determine format from base64 string
+            let format = 'JPEG';
+            if (imgData.includes('image/png')) format = 'PNG';
+            else if (imgData.includes('image/webp')) format = 'WEBP';
+
+            // Draw image preview in PDF (width: 140 pt, height: 105 pt maintaining aspect ratio roughly)
+            doc.addImage(imgData, format, 40, startY + 8, 140, 105);
+          } catch (err) {
+            doc.setFontSize(8);
+            doc.setTextColor(200, 0, 0);
+            doc.text("[Image could not be rendered]", 40, startY + 20);
+          }
+
+          startY += 130;
+        });
+      }
 
       doc.save(`LGU_TINEG_Asset_Inventory_${new Date().toISOString().slice(0, 10)}.pdf`);
     }
