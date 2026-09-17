@@ -371,7 +371,6 @@
         <img id="modal-photo-display" src="" alt="Asset Photo" class="max-h-[60vh] max-w-full rounded border border-slate-800 object-contain shadow-md">
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
-        <button onclick="replacePhotoFromModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded text-xs transition-colors">🔄 Replace Photo</button>
         <button onclick="closePhotoViewModal()" class="bg-slate-800 text-slate-300 px-4 py-1.5 rounded text-xs">Close</button>
       </div>
     </div>
@@ -824,7 +823,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyTnvMRzK_-0Xv_n0gJM1KoNT70tmYEGONSl7INsYfMlyMlldJUN0eWAtW5K0kplA3ylw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxncBYxqHYusio8B80tAT1lDdQuoPRNRTEn__4QXsfNznjG2-a9g55pO8a5yUWBuccZ1w/exec";
     const STORAGE_KEY_PHOTOS = "lgu_asset_photos_cache";
     const STORAGE_KEY_ASSETS = "lgu_asset_data_cache";
 
@@ -1172,11 +1171,6 @@
     function closePhotoViewModal() {
       document.getElementById('photoViewModal').classList.add('hidden');
       document.getElementById('photoViewModal').classList.remove('flex');
-    }
-
-    function replacePhotoFromModal() {
-      closePhotoViewModal();
-      openPhotoUploadModal(selectedPhotoIdx);
     }
 
     function openPhotoUploadModal(index) {
@@ -1662,7 +1656,9 @@
       document.getElementById('icsModal').classList.remove('flex');
     }
 
-    window.onload = fetchAssetData;
+    window.onload = function() {
+      fetchAssetData();
+    };
   </script>
 </body>
 </html>
