@@ -647,7 +647,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyLJNzHQovR4LnZqurrg7XAVZlpl9vthDM7PIoYMxEehoxZFwCYpbOghyyLxHXZ61mQTw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxncBYxqHYusio8B80tAT1lDdQuoPRNRTEn__4QXsfNznjG2-a9g55pO8a5yUWBuccZ1w/exec";
     const STORAGE_KEY_PHOTOS = "lgu_asset_photos_cache";
     const STORAGE_KEY_ASSETS = "lgu_asset_data_cache";
 
@@ -787,7 +787,11 @@
       
       saveLocalAssetCache();
       populateDynamicDropdowns(rawAssetData);
-      filterTable();
+      
+      calculateMetrics(rawAssetData);
+      filteredAssetData = [...rawAssetData];
+      currentPage = 1;
+      renderTable();
     }
 
     function populateDynamicDropdowns(data) {
