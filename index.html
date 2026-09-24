@@ -647,7 +647,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxncBYxqHYusio8B80tAT1lDdQuoPRNRTEn__4QXsfNznjG2-a9g55pO8a5yUWBuccZ1w/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyLJNzHQovR4LnZqurrg7XAVZlpl9vthDM7PIoYMxEehoxZFwCYpbOghyyLxHXZ61mQTw/exec";
     const STORAGE_KEY_PHOTOS = "lgu_asset_photos_cache";
     const STORAGE_KEY_ASSETS = "lgu_asset_data_cache";
 
@@ -770,13 +770,13 @@
       try {
         const response = await fetch(API_URL);
         const liveData = await response.json();
-        rawAssetData = liveData && liveData.length > 0 ? liveData : mock20Assets;
+        rawAssetData = liveData && liveData.length > 0 ? liveData : [];
       } catch (error) {
         try {
           const cachedAssets = JSON.parse(localStorage.getItem(STORAGE_KEY_ASSETS));
-          rawAssetData = cachedAssets && cachedAssets.length > 0 ? cachedAssets : mock20Assets;
+          rawAssetData = cachedAssets && cachedAssets.length > 0 ? cachedAssets : [];
         } catch (e) {
-          rawAssetData = mock20Assets;
+          rawAssetData = [];
         }
       }
 
