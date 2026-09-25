@@ -269,7 +269,7 @@
     </div>
   </div>
 
-  <!-- PHOTO VIEW MODAL -->
+  <!-- PHOTO VIEW MODAL WITH REPLACE AND REMOVE BUTTONS -->
   <div id="photoViewModal" class="fixed inset-0 bg-black/85 hidden items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#0b0f19] border border-slate-800 rounded-lg w-full max-w-2xl p-5 shadow-2xl text-center">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
@@ -279,8 +279,13 @@
       <div class="my-4 flex justify-center">
         <img id="modal-photo-display" src="" alt="Asset Photo" class="max-h-[60vh] max-w-full rounded border border-slate-800 object-contain shadow-md">
       </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
-        <button onclick="closePhotoViewModal()" class="bg-slate-800 text-slate-300 px-4 py-1.5 rounded text-xs">Close</button>
+      <div class="flex justify-between items-center gap-2 pt-3 border-t border-slate-800">
+        <button id="photo-status-btn" disabled class="text-emerald-400 text-xs font-semibold hidden">Uploading to Google Sheet...</button>
+        <div class="flex gap-2 ml-auto">
+          <button onclick="triggerReplacePhoto()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors">🔄 Replace Photo</button>
+          <button onclick="removeCurrentPhoto()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors">🗑️ Remove Photo</button>
+          <button onclick="closePhotoViewModal()" class="bg-slate-800 text-slate-300 px-4 py-1.5 rounded text-xs hover:bg-slate-700">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -669,6 +674,13 @@
       try { localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(photos)); } catch (e) { console.warn(e); }
     }
 
+    function removeStoredPhoto(propNo) {
+      if (!propNo) return;
+      const photos = getStoredPhotos();
+      delete photos[propNo];
+      try { localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(photos)); } catch (e) { console.warn(e); }
+    }
+
     function saveLocalAssetCache() {
       try { localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(rawAssetData)); } catch (e) { console.warn(e); }
     }
@@ -782,7 +794,9 @@
 
       rawAssetData.forEach(item => {
         const propNo = item["Property No."];
-        if (propNo && storedPhotos[propNo]) item["Photos"] = storedPhotos[propNo];
+        if (propNo && storedPhotos[propNo]) {
+          item["Photos"] = storedPhotos[propNo];
+        }
       });
       
       saveLocalAssetCache();
@@ -942,6 +956,42 @@
     function closePhotoViewModal() {
       document.getElementById('photoViewModal').classList.add('hidden');
       document.getElementById('photoViewModal').classList.remove('flex');
+      const statusBtn = document.getElementById('photo-status-btn');
+      statusBtn.classList.add('hidden');
+    }
+
+    function triggerReplacePhoto() {
+      if (selectedPhotoIdx === null) return;
+      openPhotoUploadModal(selectedPhotoIdx);
+    }
+
+    async function removeCurrentPhoto() {
+      if (selectedPhotoIdx === null || !filteredAssetData[selectedPhotoIdx]) return;
+      if (!confirm("Are you sure you want to remove this photo?")) return;
+
+      const item = filteredAssetData[selectedPhotoIdx];
+      const propNo = item["Property No."];
+
+      item["Photos"] = "";
+      removeStoredPhoto(propNo);
+      saveLocalAssetCache();
+      renderTable();
+      closePhotoViewModal();
+
+      // Sync removal with Google Sheet
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "removePhoto",
+            "Property No.": propNo
+          })
+        });
+      } catch (e) {
+        console.error("Error removing photo from Sheet:", e);
+      }
     }
 
     function openPhotoUploadModal(index) {
@@ -953,13 +1003,43 @@
         const file = e.target.files[0];
         if (file) {
           const reader = new FileReader();
-          reader.onload = event => {
+          reader.onload = async event => {
             const base64Data = event.target.result;
-            filteredAssetData[selectedPhotoIdx]["Photos"] = base64Data;
-            const propNo = filteredAssetData[selectedPhotoIdx]["Property No."];
+            const item = filteredAssetData[selectedPhotoIdx];
+            const propNo = item["Property No."];
+
+            // Update UI preview & local storage
+            item["Photos"] = base64Data;
             if (propNo) saveStoredPhoto(propNo, base64Data);
             saveLocalAssetCache();
             renderTable();
+
+            if (document.getElementById('photoViewModal').classList.contains('flex')) {
+              document.getElementById('modal-photo-display').src = base64Data;
+            }
+
+            const statusBtn = document.getElementById('photo-status-btn');
+            statusBtn.innerText = "Uploading to Google Sheet...";
+            statusBtn.classList.remove('hidden');
+
+            // Sync with Google Sheet and upload image to Drive
+            try {
+              await fetch(API_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "updatePhoto",
+                  "Property No.": propNo,
+                  Photos: base64Data
+                })
+              });
+              statusBtn.innerText = "✓ Photo synced to Google Sheet!";
+              setTimeout(() => statusBtn.classList.add('hidden'), 3000);
+            } catch (err) {
+              console.error("Error updating photo:", err);
+              statusBtn.innerText = "⚠ Saved locally, sync failed.";
+            }
           };
           reader.readAsDataURL(file);
         }
