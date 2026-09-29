@@ -1615,19 +1615,21 @@
     function openIcsModal(index) {
       const item = filteredAssetData[index];
       const costVal = parseCurrency(item["Cost (PHP)"]);
+      const coa = computeCOARulesForAsset(costVal, item["Category"], item["Acquisition Date"]);
 
       document.getElementById('ics-fund').value = item["Fund"] || 'GF-PPEs';
       document.getElementById('ics-no').value = `ICS-${item["Property No."] || ''}`;
       document.getElementById('ics-receiver').value = item["Accountable"] || '';
-      
+
       document.getElementById('pv-ics-desc').innerText = item["Asset Description"] || '';
       document.getElementById('pv-ics-serial').innerText = item["Serial No."] || 'N/A';
       document.getElementById('pv-ics-remarks').innerText = item["Remarks"] || item["Status"] || 'Active Asset';
       document.getElementById('pv-ics-prop').innerText = item["Property No."] || '';
-      document.getElementById('pv-ics-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
-      document.getElementById('pv-ics-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-ics-life').innerText = item["Useful Life"] || coa.lifeStr;
       document.getElementById('pv-ics-unitcost').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       document.getElementById('pv-ics-totalcost').innerText = `₱${costVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('pv-ics-rec-date').innerText = formatDateOnly(item["Acquisition Date"]);
+      document.getElementById('pv-ics-iss-date').innerText = formatDateOnly(item["Acquisition Date"]);
 
       updateIcsPreview();
       document.getElementById('icsModal').classList.remove('hidden');
@@ -1651,10 +1653,8 @@
       document.getElementById('icsModal').classList.remove('flex');
     }
 
-    // Automatically load data when the page finishes loading
-    document.addEventListener("DOMContentLoaded", () => {
-      fetchAssetData();
-    });
+    // Initialize asset data on window load
+    window.onload = fetchAssetData;
   </script>
 </body>
 </html>
